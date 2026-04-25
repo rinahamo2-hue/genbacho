@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
 :root {
   --ink:#111827;--ink2:#1f2937;--paper:#f8f6f1;--paper2:#f0ece3;--paper3:#e8e3d8;
   --white:#fff;--red:#b91c1c;--red-l:#fee2e2;--green:#166534;--gm:#16a34a;--green-l:#dcfce7;
@@ -54,7 +54,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
 .fl{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--steel);text-transform:uppercase;margin-bottom:4px;}
 .fi{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);appearance:none;transition:border-color .15s,background .15s;}
 .fi:focus{outline:none;border-color:#f87171;background:#fff;}
-.fi.mono{font-family:'DM Mono',monospace;font-size:15px;}
+.fi.mono{font-family:'Noto Sans JP',sans-serif;font-size:15px;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 
@@ -244,10 +244,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
   <div class="sec">現場を追加</div>
   <div class="card">
     <div class="fr"><label class="fl">現場名</label><input class="fi" id="sName" placeholder="例：○○工事" type="text"></div>
-    <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="sRev" placeholder="0" type="number" oninput="updateSP()"></div>
+    <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="sRev" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
     <div class="g2">
-      <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSub" placeholder="0" type="number" oninput="updateSP()"></div>
-      <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="sMat" placeholder="0" type="number" oninput="updateSP()"></div>
+      <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSub" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+      <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="sMat" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
     </div>
     <div class="g2">
       <div class="fr"><label class="fl">着手日</label><input class="fi" id="sStart" type="date"></div>
@@ -377,7 +377,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
     </div>
     <div class="fr"><label class="fl">摘要</label><input class="fi" id="eDesc" placeholder="例：○○工事 ガソリン代" type="text"></div>
     <div class="g2">
-      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="eAmt" placeholder="0" type="number" oninput="updateEP()"></div>
+      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="eAmt" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateEP()"></div>
       <div class="fr"><label class="fl">税区分</label>
         <select class="fi" id="eTaxRate" onchange="updateEP()">
           <option value="0.10">課税10%（標準）</option>
@@ -543,6 +543,15 @@ const fmt=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
 const fmtN=n=>Math.round(n).toLocaleString('ja-JP');
 const fmtD=d=>d?d.replace(/-/g,'/'):'';
 
+// カンマ入力フィールド用
+function toNum(s){return parseFloat(String(s).replace(/,/g,''))||0;}
+function formatInput(el){
+  const raw=String(el.value).replace(/,/g,'').replace(/[^0-9]/g,'');
+  if(raw===''){el.value='';return;}
+  el.value=parseInt(raw,10).toLocaleString('ja-JP');
+}
+function getInputNum(id){return toNum(document.getElementById(id).value);}
+
 function toggleTax(){
   taxDisplay=taxDisplay==='excl'?'incl':'excl';
   document.getElementById('taxLabel').textContent=taxDisplay==='excl'?'税抜':'税込';
@@ -695,9 +704,9 @@ function addReceipt(){
 
 // ── SITE FORM ──
 function updateSP(){
-  const rev=parseFloat(document.getElementById('sRev').value)||0;
-  const sub=parseFloat(document.getElementById('sSub').value)||0;
-  const mat=parseFloat(document.getElementById('sMat').value)||0;
+  const rev=getInputNum('sRev');
+  const sub=getInputNum('sSub');
+  const mat=getInputNum('sMat');
   const prev=document.getElementById('sitePrev');
   if(rev>0){
     prev.style.display='block';
@@ -714,9 +723,9 @@ function updateSP(){
 }
 function addSite(){
   const name=document.getElementById('sName').value.trim();
-  const rev=parseFloat(document.getElementById('sRev').value)||0;
-  const sub=parseFloat(document.getElementById('sSub').value)||0;
-  const mat=parseFloat(document.getElementById('sMat').value)||0;
+  const rev=getInputNum('sRev');
+  const sub=getInputNum('sSub');
+  const mat=getInputNum('sMat');
   const start=document.getElementById('sStart').value;
   const end=document.getElementById('sEnd').value;
   if(!name||rev===0){alert('現場名と請負金額は必須です');return;}
@@ -731,7 +740,7 @@ function addSite(){
 
 // ── EXPENSE FORM ──
 function updateEP(){
-  const amt=parseFloat(document.getElementById('eAmt').value)||0;
+  const amt=getInputNum('eAmt');
   const rate=parseFloat(document.getElementById('eTaxRate').value);
   const prev=document.getElementById('expPrev');
   if(amt>0){
@@ -746,7 +755,7 @@ function updateEP(){
 function addExpense(){
   const cat=selectedCat;
   const desc=document.getElementById('eDesc').value.trim();
-  const amt=parseFloat(document.getElementById('eAmt').value)||0;
+  const amt=getInputNum('eAmt');
   const taxRate=parseFloat(document.getElementById('eTaxRate').value);
   const date=document.getElementById('eDate').value;
   const siteId=document.getElementById('eSite').value;
