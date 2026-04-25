@@ -485,6 +485,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
   <div class="exs"><div class="ext">📤 売上仕訳CSV（弥生会計形式）</div><div class="exd">現場ごとの売上・外注工賃・材料費を仕訳形式で出力。</div><button class="btn btn-s" onclick="exportSiteCSV()">売上仕訳 CSVをダウンロード</button></div>
   <div class="exs"><div class="ext">📤 経費明細CSV（確定申告用）</div><div class="exd">勘定科目・摘要・税抜・消費税・税込・日付・現場名の一覧表。</div><button class="btn btn-s" onclick="exportDetailCSV()">経費明細 CSVをダウンロード</button></div>
   <div class="exs"><div class="ext">🖨️ 損益サマリーPDF</div><div class="exd">売上・経費・粗利・消費税の概算をPDFで出力。</div><button class="btn btn-o" onclick="exportSummaryPDF()">損益サマリー PDFをダウンロード</button></div>
+  <div class="exs" style="border-color:#f87171"><div class="ext" style="color:#ef4444">🗑️ データをすべて削除</div><div class="exd">現場・経費・見積書のデータをすべて削除します。この操作は取り消せません。</div><button class="btn" style="background:#ef4444;color:#fff" onclick="resetAllData()">全データを削除する</button></div>
 </div>
 
 <!-- MODAL: image viewer -->
@@ -497,7 +498,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
 
 <script>
 // ── STATE ──
-let sites=[], expenses=[], quotes=[];
+function loadData(){
+  try{ return JSON.parse(localStorage.getItem('genbacho_sites')||'[]'); }catch(e){ return []; }
+}
+function loadExpenses(){
+  try{ return JSON.parse(localStorage.getItem('genbacho_expenses')||'[]'); }catch(e){ return []; }
+}
+function loadQuotes(){
+  try{ return JSON.parse(localStorage.getItem('genbacho_quotes')||'[]'); }catch(e){ return []; }
+}
+function saveAll(){
+  localStorage.setItem('genbacho_sites', JSON.stringify(sites));
+  localStorage.setItem('genbacho_expenses', JSON.stringify(expenses));
+  localStorage.setItem('genbacho_quotes', JSON.stringify(quotes));
+}
+function resetAllData(){
+  if(!confirm('現場・経費・見積書のデータをすべて削除します。よろしいですか？'))return;
+  localStorage.removeItem('genbacho_sites');
+  localStorage.removeItem('genbacho_expenses');
+  localStorage.removeItem('genbacho_quotes');
+  location.reload();
+}
+
+let sites=loadData(), expenses=loadExpenses(), quotes=loadQuotes();
 let taxDisplay='excl', selectedPay='', selectedCat='';
 let currentImg=null; // base64
 let apiKey = localStorage.getItem('genbacho_apikey') || '';
@@ -768,6 +791,7 @@ function addQuote(){
 
 // ── RENDER ──
 function renderAll(){
+  saveAll();
   renderSummary();renderSites();renderExpenses();renderReceipts();renderQuotes();updateSelects();
 }
 
