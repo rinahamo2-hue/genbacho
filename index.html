@@ -230,9 +230,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
     <button onclick="pinInput('7')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">7</button>
     <button onclick="pinInput('8')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">8</button>
     <button onclick="pinInput('9')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">9</button>
-    <button onclick="pinDelete()" style="height:64px;background:transparent;border:none;color:#9ca3af;font-size:18px;cursor:pointer;">⌫</button>
-    <button onclick="pinInput('0')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">0</button>
     <div></div>
+    <button onclick="pinInput('0')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">0</button>
+    <button onclick="pinDelete()" style="height:64px;background:transparent;border:none;color:#9ca3af;font-size:18px;cursor:pointer;">⌫</button>
   </div>
   <div id="pinSetupNote" style="font-size:11px;color:#6b7280;text-align:center;display:none;">初回設定です。4桁のPINを決めてください</div>
 </div>
@@ -249,7 +249,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
 <div class="hdr">
   <div class="hdr-top">
     <div><div class="logo">現場<em>帳</em></div><div class="logo-sub">GENBA-CHO v4 — 建設業会計</div></div>
-    <div class="tax-tog" onclick="toggleTax()">表示: <span id="taxLabel">税抜</span></div>
+    <div class="tax-tog" onmousedown="event.preventDefault();toggleTax()" ontouchstart="event.preventDefault();toggleTax()">表示: <span id="taxLabel">税抜</span></div>
   </div>
   <div class="nav">
     <div class="tab active" onclick="showPage('sites',this)">現場</div>
@@ -366,7 +366,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
     <!-- AUTO-FILLED FIELDS -->
     <div class="fr"><label class="fl">店名・支払先</label><input class="fi" id="rShop" placeholder="例：○○資材センター" type="text"></div>
     <div class="g2">
-      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="rAmt" placeholder="0" type="number" oninput="updateRP()"></div>
+      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="rAmt" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateRP()"></div>
       <div class="fr"><label class="fl">税区分</label>
         <select class="fi" id="rTaxRate" onchange="updateRP()">
           <option value="0.10">課税10%（標準）</option>
@@ -547,7 +547,37 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
   </div>
 </div>
 
-<!-- MODAL: site edit -->
+<!-- MODAL: expense edit -->
+<div class="modal-bg" id="expEditModal" onclick="if(event.target===this)closeExpEdit()">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-h"><span>経費を編集</span><button class="modal-close" onclick="closeExpEdit()">×</button></div>
+    <div class="modal-body" style="padding:16px">
+      <div class="fr"><label class="fl">摘要</label><input class="fi" id="eeDesc" type="text"></div>
+      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="eeAmt" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+      <div class="fr"><label class="fl">日付</label><input class="fi" id="eeDate" type="date"></div>
+      <button class="btn btn-p" style="margin-top:8px" onclick="saveExpEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: quote edit -->
+<div class="modal-bg" id="quoteEditModal" onclick="if(event.target===this)closeQuoteEdit()">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-h"><span>見積書を編集</span><button class="modal-close" onclick="closeQuoteEdit()">×</button></div>
+    <div class="modal-body" style="padding:16px">
+      <div class="fr"><label class="fl">見積先</label><input class="fi" id="eqTo" type="text"></div>
+      <div class="fr"><label class="fl">工事名</label><input class="fi" id="eqSiteName" type="text"></div>
+      <div class="fr"><label class="fl">工事内容</label><input class="fi" id="eqWork" type="text"></div>
+      <div class="fr"><label class="fl">見積金額（税抜）</label><input class="fi mono" id="eqAmt" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+      <div class="g2">
+        <div class="fr"><label class="fl">発行日</label><input class="fi" id="eqDate" type="date"></div>
+        <div class="fr"><label class="fl">有効期限</label><input class="fi" id="eqExpiry" type="date"></div>
+      </div>
+      <div class="fr"><label class="fl">備考</label><input class="fi" id="eqNote" type="text"></div>
+      <button class="btn btn-p" style="margin-top:8px" onclick="saveQuoteEdit()">保存する</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="siteEditModal" onclick="if(event.target===this)closeSiteEdit()">
   <div class="modal" style="max-height:90vh;overflow-y:auto;">
     <div class="modal-h"><span>現場を編集</span><button class="modal-close" onclick="closeSiteEdit()">×</button></div>
@@ -757,7 +787,7 @@ async function readReceiptWithAI(dataUrl){
 }
 
 function updateRP(){
-  const amt=parseFloat(document.getElementById('rAmt').value)||0;
+  const amt=getInputNum('rAmt');
   const rate=parseFloat(document.getElementById('rTaxRate').value);
   const prev=document.getElementById('recPrev');
   if(amt>0){
@@ -773,7 +803,7 @@ function updateRP(){
 function addReceipt(){
   const cat=document.getElementById('rCat').value;
   const desc=document.getElementById('rDesc').value.trim();
-  const amt=parseFloat(document.getElementById('rAmt').value)||0;
+  const amt=getInputNum('rAmt');
   const taxRate=parseFloat(document.getElementById('rTaxRate').value);
   const date=document.getElementById('rDate').value;
   const siteId=document.getElementById('rSite').value;
@@ -790,7 +820,6 @@ function addReceipt(){
     fromReceipt:true,
     shop
   });
-  // reset receipt form
   ['rShop','rAmt','rDate','rDesc','rInvNo'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('rTaxRate').value='0.10';
   document.getElementById('rSite').value='';
@@ -999,7 +1028,10 @@ function renderExpenses(){
       <div style="text-align:right;flex-shrink:0;margin-left:10px">
         <div class="ec-amt">${fmt(taxDisplay==='excl'?e.amt:e.total)}</div>
         <div class="ec-tax">税${tp}% ＋${fmt(e.tax)}</div>
-        <button class="bsm" style="margin-top:4px;display:block" onclick="delExp(${e.id})">削除</button>
+        <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
+          <button class="bsm" onclick="editExpense(${e.id})">編集</button>
+          <button class="bsm" style="color:var(--red)" onclick="delExp(${e.id})">削除</button>
+        </div>
       </div>`;
     list.appendChild(div);
   });
@@ -1024,7 +1056,10 @@ function renderReceipts(){
       <div style="text-align:right;flex-shrink:0;margin-left:10px">
         <div class="ec-amt">${fmt(e.amt)}</div>
         <div class="ec-tax">税込${fmt(e.total)}</div>
-        <button class="bsm" style="margin-top:4px;display:block" onclick="delExp(${e.id})">削除</button>
+        <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
+          <button class="bsm" onclick="editExpense(${e.id})">編集</button>
+          <button class="bsm" style="color:var(--red)" onclick="delExp(${e.id})">削除</button>
+        </div>
       </div>`;
     list.appendChild(div);
   });
@@ -1053,7 +1088,8 @@ function renderQuotes(){
         <span class="tag tb">見積書</span>
         <div style="display:flex;gap:6px">
           <button class="bsm" onclick="exportSingleQuotePDF(${q.id})">PDF</button>
-          <button class="bsm" onclick="delQuote(${q.id})">削除</button>
+          <button class="bsm" onclick="editQuote(${q.id})">編集</button>
+          <button class="bsm" style="color:var(--red)" onclick="delQuote(${q.id})">削除</button>
         </div>
       </div>`;
     list.appendChild(div);
@@ -1504,6 +1540,58 @@ function resetPin(){
   localStorage.removeItem('genbacho_pin');
   alert('PINをリセットしました。ページを再読み込みしてください。');
   location.reload();
+}
+
+// ── EXPENSE EDIT ──
+let editingExpId=null;
+function editExpense(id){
+  const e=expenses.find(x=>x.id===id);if(!e)return;
+  editingExpId=id;
+  document.getElementById('eeDesc').value=e.desc||'';
+  document.getElementById('eeAmt').value=fmtN(e.amt);
+  document.getElementById('eeDate').value=e.date||'';
+  document.getElementById('expEditModal').style.display='flex';
+}
+function closeExpEdit(){document.getElementById('expEditModal').style.display='none';}
+function saveExpEdit(){
+  const e=expenses.find(x=>x.id===editingExpId);if(!e)return;
+  e.desc=document.getElementById('eeDesc').value.trim()||e.desc;
+  e.amt=toNum(document.getElementById('eeAmt').value);
+  e.date=document.getElementById('eeDate').value;
+  e.tax=e.amt*e.taxRate;
+  e.total=e.amt+e.tax;
+  closeExpEdit();
+  renderAll();
+}
+
+// ── QUOTE EDIT ──
+let editingQuoteId=null;
+function editQuote(id){
+  const q=quotes.find(x=>x.id===id);if(!q)return;
+  editingQuoteId=id;
+  document.getElementById('eqTo').value=q.to||'';
+  document.getElementById('eqSiteName').value=q.siteName||'';
+  document.getElementById('eqWork').value=q.work||'';
+  document.getElementById('eqAmt').value=fmtN(q.amt);
+  document.getElementById('eqDate').value=q.date||'';
+  document.getElementById('eqExpiry').value=q.expiry||'';
+  document.getElementById('eqNote').value=q.note||'';
+  document.getElementById('quoteEditModal').style.display='flex';
+}
+function closeQuoteEdit(){document.getElementById('quoteEditModal').style.display='none';}
+function saveQuoteEdit(){
+  const q=quotes.find(x=>x.id===editingQuoteId);if(!q)return;
+  q.to=document.getElementById('eqTo').value.trim();
+  q.siteName=document.getElementById('eqSiteName').value.trim();
+  q.work=document.getElementById('eqWork').value.trim();
+  q.amt=toNum(document.getElementById('eqAmt').value);
+  q.date=document.getElementById('eqDate').value;
+  q.expiry=document.getElementById('eqExpiry').value;
+  q.note=document.getElementById('eqNote').value.trim();
+  q.tax=Math.round(q.amt*TAX);
+  q.total=q.amt+q.tax;
+  closeQuoteEdit();
+  renderAll();
 }
 
 // ── SITE EDIT ──
