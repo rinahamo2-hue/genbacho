@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>現場帳 — 建設業会計</title>
+<meta name="description" content="建設業向け現場別原価管理・会計アプリ">
+<meta name="theme-color" content="#111827">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="現場帳">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+:root {
+  --ink:#111827;--ink2:#1f2937;--paper:#f8f6f1;--paper2:#f0ece3;--paper3:#e8e3d8;
+  --white:#fff;--red:#b91c1c;--red-l:#fee2e2;--green:#166534;--gm:#16a34a;--green-l:#dcfce7;
+  --blue:#1e40af;--blue-l:#dbeafe;--gold:#92400e;--gold-l:#fef3c7;--steel:#6b7280;--border:#d1d5db;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;font-variant-numeric:lining-nums;}
+.fi,.fi.mono{font-variant-numeric:lining-nums;}
+
+/* HEADER */
+.hdr{background:var(--ink);padding:0 16px;position:sticky;top:0;z-index:200;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:11px 0 0;}
+.logo{font-size:19px;font-weight:900;color:#fff;letter-spacing:.04em;}
+.logo em{color:#f87171;font-style:normal;}
+.logo-sub{font-size:10px;color:#6b7280;font-family:'DM Mono',monospace;margin-top:1px;}
+.tax-tog{display:flex;align-items:center;gap:5px;background:var(--ink2);border-radius:20px;padding:5px 10px;font-size:11px;color:#9ca3af;cursor:pointer;user-select:none;border:1px solid #374151;}
+.tax-tog span{color:#f87171;font-weight:700;font-family:'DM Mono',monospace;}
+.nav{display:flex;margin-top:9px;border-bottom:2px solid #1f2937;overflow-x:auto;}
+.tab{padding:8px 13px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;letter-spacing:.05em;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+.tab.active{color:#f87171;border-bottom-color:#f87171;}
+
+/* SUMMARY */
+.sbar{background:var(--ink2);padding:9px 16px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;border-bottom:1px solid #374151;}
+.si{text-align:center;}
+.sl{font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;margin-bottom:2px;text-transform:uppercase;}
+.sv{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:#f3f4f6;}
+.sv.red{color:#f87171;}.sv.green{color:#86efac;}.sv.gold{color:#fcd34d;}
+
+/* PAGES */
+.page{display:none;padding:16px;max-width:640px;margin:0 auto;padding-bottom:60px;}
+.page.active{display:block;}
+.sec{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--steel);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* CARD / FORM */
+.card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.fr{margin-bottom:12px;}.fr:last-child{margin-bottom:0;}
+.fl{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--steel);text-transform:uppercase;margin-bottom:4px;}
+.fi{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);appearance:none;transition:border-color .15s,background .15s;}
+.fi:focus{outline:none;border-color:#f87171;background:#fff;}
+.fi.mono{font-family:'Noto Sans JP',sans-serif;font-size:15px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-size:11px;font-family:'Noto Sans JP',sans-serif;font-weight:500;color:var(--steel);cursor:pointer;background:var(--paper);transition:all .12s;white-space:nowrap;}
+.chip:hover{border-color:#f87171;color:var(--red);}
+.chip.sel{background:var(--red);border-color:var(--red);color:#fff;font-weight:700;}
+
+/* PREVIEW */
+.prev{background:var(--paper2);border-left:3px solid #f87171;padding:11px 13px;border-radius:0 4px 4px 0;margin-top:12px;}
+.pr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;color:var(--steel);}
+.pr .pv{font-family:'DM Mono',monospace;font-weight:600;color:var(--ink);}
+.pr.tot{border-top:1px solid var(--border);margin-top:7px;padding-top:7px;font-size:14px;}
+.pr.tot .pv{color:var(--gm);}
+.pr.ptax .pv{color:var(--blue);}
+.pr.prate .pv{color:var(--gold);}
+
+/* BUTTONS */
+.btn{width:100%;padding:12px;border:none;border-radius:4px;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:opacity .15s,transform .1s;letter-spacing:.04em;}
+.btn:active{transform:translateY(1px);}
+.btn-p{background:var(--red);color:#fff;box-shadow:0 2px 0 #7f1d1d;}.btn-p:hover{opacity:.88;}
+.btn-s{background:var(--ink);color:#fff;}
+.btn-o{background:none;border:1px solid var(--border);color:var(--steel);}
+.btn-o:hover{border-color:var(--ink);color:var(--ink);}
+.btn-g{background:#059669;color:#fff;}
+.bsm{padding:5px 10px;font-size:11px;border-radius:3px;border:1px solid var(--border);background:none;color:var(--steel);cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+.bsm:hover{border-color:var(--red);color:var(--red);}
+.br2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+
+/* TAG */
+.tag{font-size:10px;padding:2px 7px;border-radius:2px;font-weight:700;}
+.tr{background:var(--red-l);color:var(--red);}
+.tg{background:var(--green-l);color:var(--green);}
+.tb{background:var(--blue-l);color:var(--blue);}
+.tgo{background:var(--gold-l);color:var(--gold);}
+
+/* SITE CARD */
+.sc{background:var(--white);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);animation:fu .2s ease;}
+@keyframes fu{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.sc-h{background:var(--ink);padding:11px 14px;display:flex;justify-content:space-between;align-items:flex-start;}
+.sc-n{font-size:14px;font-weight:700;color:#fff;}
+.sc-d{font-size:10px;color:#9ca3af;font-family:'DM Mono',monospace;margin-top:2px;}
+.sc-al{font-size:9px;color:#9ca3af;text-align:right;}
+.sc-av{font-size:16px;font-weight:700;color:#fff;font-family:'DM Mono',monospace;}
+.sc-b{padding:10px 14px;}
+.sc-r{display:flex;justify-content:space-between;font-size:12px;color:var(--steel);margin-bottom:3px;}
+.sc-r .sv{font-family:'DM Mono',monospace;font-weight:600;color:var(--ink);}
+.sc-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+.sc-f{padding:9px 14px;background:var(--paper2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.sc-pl{font-size:10px;color:var(--steel);font-weight:700;text-transform:uppercase;}
+.sc-pv{font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--gm);}
+.sc-mg{font-size:11px;font-family:'DM Mono',monospace;color:var(--gold);font-weight:700;}
+
+/* EXPENSE CARD */
+.ec{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;animation:fu .2s ease;}
+.ec-cat{font-size:10px;font-weight:700;color:var(--steel);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.ec-desc{font-size:13px;font-weight:500;}
+.ec-meta{font-size:11px;color:var(--steel);margin-top:2px;}
+.ec-amt{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;text-align:right;}
+.ec-tax{font-size:10px;color:var(--blue);font-family:'DM Mono',monospace;text-align:right;}
+.ec-img{width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border);margin-top:4px;cursor:pointer;}
+
+/* RECEIPT CAMERA */
+.cam-area{border:2px dashed var(--border);border-radius:8px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--paper);}
+.cam-area:hover{border-color:#f87171;}
+.cam-icon{font-size:32px;margin-bottom:8px;}
+.cam-txt{font-size:13px;color:var(--steel);}
+.cam-sub{font-size:11px;color:#9ca3af;margin-top:4px;}
+.img-preview-wrap{position:relative;margin-top:12px;display:none;}
+.img-preview{width:100%;max-height:200px;object-fit:contain;border-radius:6px;border:1px solid var(--border);}
+.img-remove{position:absolute;top:6px;right:6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;line-height:24px;}
+.ai-badge{display:inline-flex;align-items:center;gap:4px;background:var(--blue-l);color:var(--blue);font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;margin-left:6px;}
+.ai-status{font-size:11px;color:var(--steel);margin-top:6px;min-height:16px;}
+.ai-status.loading{color:var(--blue);}
+.ai-status.done{color:var(--gm);}
+.ai-status.err{color:var(--red);}
+
+/* API KEY BANNER */
+.apikey-banner{background:var(--gold-l);border:1px solid #d97706;border-radius:6px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;}
+.apikey-banner .icon{font-size:18px;flex-shrink:0;}
+.apikey-banner .text{font-size:12px;color:var(--gold);line-height:1.5;}
+.apikey-banner .text strong{display:block;font-size:13px;margin-bottom:2px;}
+.apikey-input-row{display:flex;gap:8px;margin-top:8px;}
+.apikey-input-row input{flex:1;padding:7px 10px;border:1px solid #d97706;border-radius:4px;font-size:12px;font-family:'DM Mono',monospace;background:#fff;}
+.apikey-input-row button{padding:7px 12px;background:var(--gold);color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;}
+
+/* QUOTE CARD */
+.qc{background:var(--white);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);animation:fu .2s ease;}
+.qc-h{background:var(--ink2);padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;}
+.qc-n{font-size:14px;font-weight:700;color:#fff;}
+.qc-d{font-size:10px;color:#9ca3af;font-family:'DM Mono',monospace;margin-top:2px;}
+.qc-b{padding:10px 14px;}
+.qc-r{display:flex;justify-content:space-between;font-size:12px;color:var(--steel);margin-bottom:3px;}
+.qc-r .qv{font-family:'DM Mono',monospace;font-weight:600;color:var(--ink);}
+.qc-f{padding:9px 14px;background:var(--paper2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+
+/* ACC TABLE */
+.at{background:var(--white);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px;}
+.ar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--paper3);font-size:13px;}
+.ar:last-child{border-bottom:none;}
+.ar.hd{background:var(--paper2);font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--steel);text-transform:uppercase;}
+.ar.tot{background:var(--ink);}
+.ar.tot .al{color:#9ca3af;font-size:12px;}
+.ar.tot .av{color:#86efac;font-size:16px;font-family:'DM Mono',monospace;font-weight:700;}
+.ar.sub{background:var(--paper2);}
+.al{color:var(--steel);}
+.av{font-family:'DM Mono',monospace;font-weight:600;color:var(--ink);}
+.av.pos{color:var(--gm);}.av.neg{color:var(--red);}.av.blue{color:var(--blue);}
+
+/* INVOICE */
+.inv-box{background:var(--white);border:2px solid var(--ink);border-radius:6px;padding:20px;margin-bottom:16px;font-size:13px;}
+.inv-title{font-size:22px;font-weight:900;letter-spacing:.05em;margin-bottom:4px;}
+.inv-sub{font-size:11px;color:var(--steel);font-family:'DM Mono',monospace;}
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0;}
+.inv-fl{font-size:10px;color:var(--steel);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.inv-fv{font-size:13px;font-weight:500;border-bottom:1px solid var(--border);padding-bottom:4px;min-height:22px;}
+.inv-tbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px;}
+.inv-tbl th{background:var(--ink);color:#fff;padding:6px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;}
+.inv-tbl td{padding:7px 10px;border-bottom:1px solid var(--paper3);}
+.inv-tbl tr:last-child td{border-bottom:none;}
+.inv-tbl .rt{text-align:right;font-family:'DM Mono',monospace;}
+.inv-tots{border-top:2px solid var(--ink);padding-top:10px;}
+.itr{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+.itr.grand{font-size:17px;font-weight:700;border-top:1px solid var(--border);margin-top:6px;padding-top:6px;}
+.itr .tv{font-family:'DM Mono',monospace;font-weight:600;}
+.itr.grand .tv{color:var(--red);}
+.inv-reg{font-size:11px;color:var(--steel);font-family:'DM Mono',monospace;margin-top:12px;border-top:1px solid var(--border);padding-top:8px;}
+
+/* EXPORT */
+.exs{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:12px;}
+.ext{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+.exd{font-size:11px;color:var(--steel);margin-bottom:10px;line-height:1.5;}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:8px;padding:0;max-width:400px;width:100%;overflow:hidden;}
+.modal-h{background:var(--ink);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
+.modal-h span{font-size:14px;font-weight:700;color:#fff;}
+.modal-close{background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;line-height:1;}
+.modal-body{padding:16px;}
+.modal-img{width:100%;border-radius:6px;margin-bottom:12px;}
+
+.empty{text-align:center;padding:32px 16px;color:var(--steel);}
+.empty-icon{font-size:36px;margin-bottom:8px;}
+.empty-txt{font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- PIN LOCK -->
+<div id="pinOverlay" style="display:none;position:fixed;inset:0;background:#111827;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
+  <div style="text-align:center">
+    <div style="font-size:22px;font-weight:900;color:#fff;">現場<span style="color:#f87171">帳</span></div>
+    <div style="font-size:12px;color:#6b7280;margin-top:4px;" id="pinLabel">PINを入力してください</div>
+  </div>
+  <div style="display:flex;gap:12px;" id="pinDots">
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #374151;background:transparent;" id="dot0"></div>
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #374151;background:transparent;" id="dot1"></div>
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #374151;background:transparent;" id="dot2"></div>
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #374151;background:transparent;" id="dot3"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,72px);gap:10px;">
+    <button onclick="pinInput('1')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">1</button>
+    <button onclick="pinInput('2')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">2</button>
+    <button onclick="pinInput('3')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">3</button>
+    <button onclick="pinInput('4')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">4</button>
+    <button onclick="pinInput('5')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">5</button>
+    <button onclick="pinInput('6')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">6</button>
+    <button onclick="pinInput('7')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">7</button>
+    <button onclick="pinInput('8')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">8</button>
+    <button onclick="pinInput('9')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">9</button>
+    <button onclick="pinDelete()" style="height:64px;background:transparent;border:none;color:#9ca3af;font-size:18px;cursor:pointer;">⌫</button>
+    <button onclick="pinInput('0')" style="height:64px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#fff;font-size:22px;font-weight:700;cursor:pointer;">0</button>
+    <div></div>
+  </div>
+  <div id="pinSetupNote" style="font-size:11px;color:#6b7280;text-align:center;display:none;">初回設定です。4桁のPINを決めてください</div>
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#111827;color:#fff;padding:12px 16px;z-index:999;align-items:center;justify-content:space-between;gap:10px;border-top:2px solid #f87171;">
+  <div style="font-size:13px;font-weight:700;">📲 ホーム画面に追加するともっと便利</div>
+  <div style="display:flex;gap:8px;flex-shrink:0;">
+    <button onclick="installApp()" style="background:#f87171;color:#fff;border:none;border-radius:4px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">追加する</button>
+    <button onclick="document.getElementById('installBanner').style.display='none'" style="background:none;border:1px solid #374151;color:#9ca3af;border-radius:4px;padding:7px 12px;font-size:12px;cursor:pointer;">後で</button>
+  </div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div><div class="logo">現場<em>帳</em></div><div class="logo-sub">GENBA-CHO v4 — 建設業会計</div></div>
+    <div class="tax-tog" onclick="toggleTax()">表示: <span id="taxLabel">税抜</span></div>
+  </div>
+  <div class="nav">
+    <div class="tab active" onclick="showPage('sites',this)">現場</div>
+    <div class="tab" onclick="showPage('receipt',this)">領収書</div>
+    <div class="tab" onclick="showPage('expenses',this)">経費</div>
+    <div class="tab" onclick="showPage('quote',this)">見積書</div>
+    <div class="tab" onclick="showPage('invoice',this)">請求書</div>
+    <div class="tab" onclick="showPage('accounting',this)">会計</div>
+    <div class="tab" onclick="showPage('export',this)">出力</div>
+  </div>
+</div>
+
+<div class="sbar">
+  <div class="si"><div class="sl">現場数</div><div class="sv" id="sumCount">0</div></div>
+  <div class="si"><div class="sl">売上</div><div class="sv red" id="sumRev">¥0</div></div>
+  <div class="si"><div class="sl">経費</div><div class="sv" id="sumExp">¥0</div></div>
+  <div class="si"><div class="sl">粗利</div><div class="sv green" id="sumProfit">¥0</div></div>
+  <div class="si"><div class="sl">消費税</div><div class="sv gold" id="sumTax">¥0</div></div>
+</div>
+
+<!-- ══════════ SITES ══════════ -->
+<div class="page active" id="page-sites">
+  <div class="sec">現場を追加</div>
+  <div class="card">
+    <div class="fr"><label class="fl">現場名</label><input class="fi" id="sName" placeholder="例：○○工事" type="text"></div>
+    <div class="fr">
+      <label class="fl">工事種別</label>
+      <div class="chips" id="siteTypeChips">
+        <div class="chip sel" onclick="selSiteType('請負')">請負</div>
+        <div class="chip" onclick="selSiteType('常用')">常用</div>
+      </div>
+    </div>
+    <!-- 請負フィールド -->
+    <div id="siteTypeUke">
+      <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="sRev" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+      <div class="g2">
+        <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSub" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+        <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="sMat" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+      </div>
+    </div>
+    <!-- 常用フィールド -->
+    <div id="siteTypeJoyo" style="display:none">
+      <div class="g3">
+        <div class="fr"><label class="fl">単価（1人工・税抜）</label><input class="fi mono" id="sUnitPrice" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+        <div class="fr"><label class="fl">日数（日）</label><input class="fi mono" id="sDays" placeholder="1" type="text" inputmode="numeric" oninput="updateSP()"></div>
+        <div class="fr"><label class="fl">人数</label><input class="fi mono" id="sWorkers" placeholder="1" type="text" inputmode="numeric" oninput="updateSP()"></div>
+      </div>
+      <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSubJ" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+    </div>
+    <div class="g2">
+      <div class="fr"><label class="fl">着手日</label><input class="fi" id="sStart" type="date"></div>
+      <div class="fr"><label class="fl">完了予定日</label><input class="fi" id="sEnd" type="date"></div>
+    </div>
+    <div class="fr">
+      <label class="fl">入金条件</label>
+      <div class="chips" id="payChips">
+        <div class="chip" onclick="selChip(this,'pay','完了後即時')">完了後即時</div>
+        <div class="chip" onclick="selChip(this,'pay','月末締翌月払')">月末締翌月払</div>
+        <div class="chip" onclick="selChip(this,'pay','検収後30日')">検収後30日</div>
+        <div class="chip" onclick="selChip(this,'pay','前払い50%')">前払い50%</div>
+        <div class="chip" onclick="selChip(this,'pay','手形90日')">手形90日</div>
+        <div class="chip" onclick="selChip(this,'pay','その他')">その他</div>
+      </div>
+    </div>
+    <div class="prev" id="sitePrev" style="display:none">
+      <div class="pr"><span>請負（税抜）</span><span class="pv" id="pRev">—</span></div>
+      <div class="pr ptax"><span>消費税10%</span><span class="pv" id="pRevTax">—</span></div>
+      <div class="pr"><span>請負（税込）</span><span class="pv" id="pRevInc">—</span></div>
+      <div class="pr" style="margin-top:6px"><span>外注工賃</span><span class="pv" id="pSub">—</span></div>
+      <div class="pr"><span>材料費</span><span class="pv" id="pMat">—</span></div>
+      <div class="pr tot"><span>粗利益（税抜）</span><span class="pv" id="pProfit">—</span></div>
+      <div class="pr prate"><span>粗利率</span><span class="pv" id="pMargin">—</span></div>
+    </div>
+    <div style="margin-top:14px"><button class="btn btn-p" onclick="addSite()">＋ 現場を追加</button></div>
+  </div>
+  <div class="sec">現場一覧</div>
+  <div id="sitesList"><div class="empty" id="sitesEmpty"><div class="empty-icon">🏗️</div><div class="empty-txt">現場がまだありません</div></div></div>
+</div>
+
+<!-- ══════════ RECEIPT ══════════ -->
+<div class="page" id="page-receipt">
+  <div class="sec">領収書を撮影・登録</div>
+
+  <!-- API KEY BANNER -->
+  <div class="apikey-banner" id="apiBanner">
+    <div class="icon">🤖</div>
+    <div class="text">
+      <strong>AI自動読み取り — APIキー設定で有効化</strong>
+      Claude AIが領収書の金額・日付・店名を自動で読み取り経費に入力します。APIキーを設定すると今すぐ使えます。
+      <div class="apikey-input-row">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-...">
+        <button onclick="saveApiKey()">保存して有効化</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <!-- CAMERA INPUT -->
+    <div class="fr">
+      <label class="fl">領収書を撮影またはアップロード</label>
+      <div class="cam-area" onclick="document.getElementById('camInput').click()">
+        <div class="cam-icon">📷</div>
+        <div class="cam-txt">タップしてカメラで撮影</div>
+        <div class="cam-sub">または画像ファイルを選択</div>
+      </div>
+      <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="onImageSelected(event)">
+      <div class="img-preview-wrap" id="imgPreviewWrap">
+        <img class="img-preview" id="imgPreview" src="">
+        <button class="img-remove" onclick="removeImage()">×</button>
+      </div>
+      <div class="ai-status" id="aiStatus"></div>
+    </div>
+
+    <!-- AUTO-FILLED FIELDS -->
+    <div class="fr"><label class="fl">店名・支払先</label><input class="fi" id="rShop" placeholder="例：○○資材センター" type="text"></div>
+    <div class="g2">
+      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="rAmt" placeholder="0" type="number" oninput="updateRP()"></div>
+      <div class="fr"><label class="fl">税区分</label>
+        <select class="fi" id="rTaxRate" onchange="updateRP()">
+          <option value="0.10">課税10%（標準）</option>
+          <option value="0.08">課税8%（軽減）</option>
+          <option value="0">非課税</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="fr"><label class="fl">日付</label><input class="fi" id="rDate" type="date"></div>
+      <div class="fr"><label class="fl">勘定科目</label>
+        <select class="fi" id="rCat">
+          <option value="">— 選択 —</option>
+          <option>外注工賃</option><option>材料費</option><option>燃料費</option>
+          <option>車両費</option><option>工具器具費</option><option>地代家賃</option>
+          <option>通信費</option><option>損害保険料</option><option>交際費</option>
+          <option>消耗品費</option><option>旅費交通費</option><option>新聞図書費</option><option>雑費</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr"><label class="fl">摘要（内容）</label><input class="fi" id="rDesc" placeholder="例：○○工事 資材購入" type="text"></div>
+    <div class="fr"><label class="fl">紐づける現場（任意）</label><select class="fi" id="rSite"><option value="">— 現場外 —</option></select></div>
+    <div class="fr"><label class="fl">仕入先 インボイス登録番号</label><input class="fi mono" id="rInvNo" placeholder="T1234567890123" type="text"></div>
+
+    <div class="prev" id="recPrev" style="display:none">
+      <div class="pr"><span>税抜金額</span><span class="pv" id="rpAmt">—</span></div>
+      <div class="pr ptax"><span id="rpTaxLbl">消費税</span><span class="pv" id="rpTax">—</span></div>
+      <div class="pr tot"><span>税込合計</span><span class="pv" id="rpTotal">—</span></div>
+    </div>
+    <div style="margin-top:14px"><button class="btn btn-p" onclick="addReceipt()">＋ 経費として登録</button></div>
+  </div>
+
+  <div class="sec">登録済み領収書</div>
+  <div id="receiptList"><div class="empty" id="receiptEmpty"><div class="empty-icon">🧾</div><div class="empty-txt">領収書がまだありません</div></div></div>
+</div>
+
+<!-- ══════════ EXPENSES ══════════ -->
+<div class="page" id="page-expenses">
+  <div class="sec">経費を追加（手入力）</div>
+  <div class="card">
+    <div class="fr">
+      <label class="fl">勘定科目（弥生会計）</label>
+      <div class="chips" id="expCatChips">
+        <div class="chip" onclick="selChip(this,'cat','外注工賃')">外注工賃</div>
+        <div class="chip" onclick="selChip(this,'cat','材料費')">材料費</div>
+        <div class="chip" onclick="selChip(this,'cat','燃料費')">燃料費</div>
+        <div class="chip" onclick="selChip(this,'cat','車両費')">車両費</div>
+        <div class="chip" onclick="selChip(this,'cat','工具器具費')">工具器具費</div>
+        <div class="chip" onclick="selChip(this,'cat','地代家賃')">地代家賃</div>
+        <div class="chip" onclick="selChip(this,'cat','通信費')">通信費</div>
+        <div class="chip" onclick="selChip(this,'cat','損害保険料')">損害保険料</div>
+        <div class="chip" onclick="selChip(this,'cat','交際費')">交際費</div>
+        <div class="chip" onclick="selChip(this,'cat','消耗品費')">消耗品費</div>
+        <div class="chip" onclick="selChip(this,'cat','旅費交通費')">旅費交通費</div>
+        <div class="chip" onclick="selChip(this,'cat','新聞図書費')">新聞図書費</div>
+        <div class="chip" onclick="selChip(this,'cat','雑費')">雑費</div>
+      </div>
+    </div>
+    <div class="fr"><label class="fl">摘要</label><input class="fi" id="eDesc" placeholder="例：○○工事 ガソリン代" type="text"></div>
+    <div class="g2">
+      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="eAmt" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateEP()"></div>
+      <div class="fr"><label class="fl">税区分</label>
+        <select class="fi" id="eTaxRate" onchange="updateEP()">
+          <option value="0.10">課税10%（標準）</option>
+          <option value="0.08">課税8%（軽減）</option>
+          <option value="0">非課税・免税</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr"><label class="fl">日付</label><input class="fi" id="eDate" type="date"></div>
+    <div class="fr"><label class="fl">紐づける現場（任意）</label><select class="fi" id="eSite"><option value="">— 現場外経費 —</option></select></div>
+    <div class="fr"><label class="fl">仕入先 インボイス登録番号</label><input class="fi mono" id="eInvNo" placeholder="T1234567890123" type="text"></div>
+    <div class="prev" id="expPrev" style="display:none">
+      <div class="pr"><span>税抜金額</span><span class="pv" id="epAmt">—</span></div>
+      <div class="pr ptax"><span id="epTaxLbl">消費税</span><span class="pv" id="epTax">—</span></div>
+      <div class="pr tot"><span>税込合計</span><span class="pv" id="epTotal">—</span></div>
+    </div>
+    <div style="margin-top:14px"><button class="btn btn-p" onclick="addExpense()">＋ 経費を追加</button></div>
+  </div>
+  <div class="sec">経費一覧（領収書含む）</div>
+  <div id="expensesList"><div class="empty" id="expensesEmpty"><div class="empty-icon">🧾</div><div class="empty-txt">経費がまだありません</div></div></div>
+</div>
+
+<!-- ══════════ QUOTE ══════════ -->
+<div class="page" id="page-quote">
+  <div class="sec">見積書を作成</div>
+  <div class="card">
+    <div class="fr"><label class="fl">見積先</label><input class="fi" id="qTo" placeholder="○○建設株式会社 御中" type="text"></div>
+    <div class="g2">
+      <div class="fr"><label class="fl">見積日</label><input class="fi" id="qDate" type="date"></div>
+      <div class="fr"><label class="fl">有効期限</label><input class="fi" id="qExpiry" type="date"></div>
+    </div>
+    <div class="fr"><label class="fl">現場名・工事名</label><input class="fi" id="qSiteName" placeholder="例：○○工事" type="text"></div>
+    <div class="fr"><label class="fl">工事内容</label><input class="fi" id="qWork" placeholder="例：舗装打替工事一式" type="text"></div>
+    <div class="fr"><label class="fl">見積金額（税抜）</label><input class="fi mono" id="qAmt" placeholder="0" type="number" oninput="updateQP()"></div>
+    <div class="fr">
+      <label class="fl">備考</label>
+      <input class="fi" id="qNote" placeholder="例：材料費・外注工賃含む" type="text">
+    </div>
+    <div class="prev" id="quotePrev" style="display:none">
+      <div class="pr"><span>見積金額（税抜）</span><span class="pv" id="qpAmt">—</span></div>
+      <div class="pr ptax"><span>消費税10%</span><span class="pv" id="qpTax">—</span></div>
+      <div class="pr tot"><span>見積合計（税込）</span><span class="pv" id="qpTotal">—</span></div>
+    </div>
+    <div class="br2">
+      <button class="btn btn-p" onclick="addQuote()">＋ 見積書を保存</button>
+      <button class="btn btn-o" onclick="exportQuotePDF()">PDF出力</button>
+    </div>
+  </div>
+  <div class="sec">見積書一覧</div>
+  <div id="quoteList"><div class="empty" id="quoteEmpty"><div class="empty-icon">📋</div><div class="empty-txt">見積書がまだありません</div></div></div>
+</div>
+
+<!-- ══════════ INVOICE ══════════ -->
+<div class="page" id="page-invoice">
+  <div class="sec">請求書設定</div>
+  <div class="card">
+    <div class="g2">
+      <div class="fr"><label class="fl">自社名</label><input class="fi" id="iMyName" placeholder="株式会社○○工務店" type="text"></div>
+      <div class="fr"><label class="fl">担当者名</label><input class="fi" id="iMyPerson" placeholder="山田太郎" type="text"></div>
+    </div>
+    <div class="fr"><label class="fl">自社 インボイス登録番号</label><input class="fi mono" id="iMyRegNo" placeholder="T1234567890123" type="text"></div>
+    <div class="g2">
+      <div class="fr"><label class="fl">請求先</label><input class="fi" id="iTo" placeholder="○○建設株式会社" type="text"></div>
+      <div class="fr"><label class="fl">請求日</label><input class="fi" id="iDate" type="date"></div>
+    </div>
+    <div class="fr"><label class="fl">現場を選択</label><select class="fi" id="iSite" onchange="updateInvPrev()"><option value="">— 現場を選択 —</option></select></div>
+    <div class="br2">
+      <button class="btn btn-s" onclick="updateInvPrev()">プレビュー更新</button>
+      <button class="btn btn-o" onclick="exportInvoicePDF()">PDF出力</button>
+    </div>
+  </div>
+  <div class="sec">適格請求書プレビュー</div>
+  <div class="inv-box" id="invPrev"><div style="color:var(--steel);text-align:center;padding:20px;font-size:13px">現場を選択するとプレビューが表示されます</div></div>
+</div>
+
+<!-- ══════════ ACCOUNTING ══════════ -->
+<div class="page" id="page-accounting">
+  <div class="sec">損益サマリー</div>
+  <div class="at">
+    <div class="ar hd"><span class="al">勘定科目</span><span class="av">金額（税抜）</span></div>
+    <div class="ar"><span class="al">売上高</span><span class="av pos" id="accRev">¥0</span></div>
+    <div class="ar sub"><span class="al">　仮受消費税</span><span class="av blue" id="accRevTax">¥0</span></div>
+    <div class="ar"><span class="al">外注工賃</span><span class="av neg" id="accSub">¥0</span></div>
+    <div class="ar"><span class="al">材料費</span><span class="av neg" id="accMat">¥0</span></div>
+    <div class="ar"><span class="al">その他経費</span><span class="av neg" id="accOther">¥0</span></div>
+    <div class="ar sub"><span class="al">　仮払消費税</span><span class="av blue" id="accExpTax">¥0</span></div>
+    <div class="ar tot"><span class="al">所得（税引前概算）</span><span class="av" id="accIncome">¥0</span></div>
+  </div>
+  <div class="sec">消費税計算</div>
+  <div class="at">
+    <div class="ar hd"><span class="al">項目</span><span class="av">金額</span></div>
+    <div class="ar"><span class="al">仮受消費税（課税売上）</span><span class="av blue" id="ctRev">¥0</span></div>
+    <div class="ar"><span class="al">仮払消費税（仕入税額控除）</span><span class="av blue" id="ctExp">¥0</span></div>
+    <div class="ar sub"><span class="al">　うち適格請求書（T番号）分</span><span class="av blue" id="ctInv">¥0</span></div>
+    <div class="ar tot"><span class="al">納付消費税（概算）</span><span class="av" id="ctPay">¥0</span></div>
+  </div>
+  <div class="sec">勘定科目別内訳</div>
+  <div class="at" id="catBD"><div class="ar hd"><span class="al">勘定科目</span><span class="av">金額（税抜）</span></div></div>
+</div>
+
+<!-- ══════════ EXPORT ══════════ -->
+<div class="page" id="page-export">
+  <div class="sec">CSV出力（弥生会計インポート用）</div>
+  <div class="exs"><div class="ext">📤 経費仕訳CSV（弥生会計形式）</div><div class="exd">仕訳日記帳にそのままインポートできる形式。勘定科目・税区分・インボイス番号対応。</div><button class="btn btn-s" onclick="exportExpCSV()">経費仕訳 CSVをダウンロード</button></div>
+  <div class="exs"><div class="ext">📤 売上仕訳CSV（弥生会計形式）</div><div class="exd">現場ごとの売上・外注工賃・材料費を仕訳形式で出力。</div><button class="btn btn-s" onclick="exportSiteCSV()">売上仕訳 CSVをダウンロード</button></div>
+  <div class="exs"><div class="ext">📤 経費明細CSV（確定申告用）</div><div class="exd">勘定科目・摘要・税抜・消費税・税込・日付・現場名の一覧表。</div><button class="btn btn-s" onclick="exportDetailCSV()">経費明細 CSVをダウンロード</button></div>
+  <div class="exs"><div class="ext">🖨️ 損益サマリーPDF</div><div class="exd">売上・経費・粗利・消費税の概算をPDFで出力。</div><button class="btn btn-o" onclick="exportSummaryPDF()">損益サマリー PDFをダウンロード</button></div>
+  <div class="exs" style="border-color:#f87171"><div class="ext" style="color:#ef4444">🗑️ データをすべて削除</div><div class="exd">現場・経費・見積書のデータをすべて削除します。この操作は取り消せません。</div><button class="btn" style="background:#ef4444;color:#fff" onclick="resetAllData()">全データを削除する</button></div>
+  <div class="exs" style="border-color:#374151"><div class="ext" style="color:#9ca3af">🔑 PINをリセット</div><div class="exd">PINを忘れた場合や変更したい場合はこちら。</div><button class="btn" style="background:#1f2937;color:#fff" onclick="resetPin()">PINをリセットする</button></div>
+</div>
+
+<!-- MODAL: image viewer -->
+<div class="modal-bg" id="imgModal">
+  <div class="modal">
+    <div class="modal-h"><span>領収書画像</span><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body"><img class="modal-img" id="modalImg" src=""></div>
+  </div>
+</div>
+
+<!-- MODAL: site edit -->
+<div class="modal-bg" id="siteEditModal" onclick="if(event.target===this)closeSiteEdit()">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-h"><span>現場を編集</span><button class="modal-close" onclick="closeSiteEdit()">×</button></div>
+    <div class="modal-body" style="padding:16px">
+      <div class="fr"><label class="fl">現場名</label><input class="fi" id="eName" type="text"></div>
+      <div class="fr">
+        <label class="fl">工事種別</label>
+        <div class="chips" id="editTypeChips">
+          <div class="chip sel" onclick="selEditType('請負')">請負</div>
+          <div class="chip" onclick="selEditType('常用')">常用</div>
+        </div>
+      </div>
+      <div id="editTypeUke">
+        <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="eRev" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+        <div class="g2">
+          <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="eSubEdit" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+          <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="eMatEdit" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+        </div>
+      </div>
+      <div id="editTypeJoyo" style="display:none">
+        <div class="g3">
+          <div class="fr"><label class="fl">単価（税抜）</label><input class="fi mono" id="eUnitPrice" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+          <div class="fr"><label class="fl">日数</label><input class="fi mono" id="eDays" type="text" inputmode="numeric"></div>
+          <div class="fr"><label class="fl">人数</label><input class="fi mono" id="eWorkers" type="text" inputmode="numeric"></div>
+        </div>
+        <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="eSubJ2" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+      </div>
+      <div class="g2">
+        <div class="fr"><label class="fl">着手日</label><input class="fi" id="eStart" type="date"></div>
+        <div class="fr"><label class="fl">完了予定日</label><input class="fi" id="eEnd" type="date"></div>
+      </div>
+      <div class="fr">
+        <label class="fl">入金条件</label>
+        <div class="chips" id="editPayChips">
+          <div class="chip" onclick="selEditPay('完了後即時')">完了後即時</div>
+          <div class="chip" onclick="selEditPay('月末締翌月払')">月末締翌月払</div>
+          <div class="chip" onclick="selEditPay('検収後30日')">検収後30日</div>
+          <div class="chip" onclick="selEditPay('前払い50%')">前払い50%</div>
+          <div class="chip" onclick="selEditPay('手形90日')">手形90日</div>
+          <div class="chip" onclick="selEditPay('その他')">その他</div>
+        </div>
+      </div>
+      <button class="btn btn-p" style="margin-top:8px" onclick="saveSiteEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+function loadData(){
+  try{ return JSON.parse(localStorage.getItem('genbacho_sites')||'[]'); }catch(e){ return []; }
+}
+function loadExpenses(){
+  try{ return JSON.parse(localStorage.getItem('genbacho_expenses')||'[]'); }catch(e){ return []; }
+}
+function loadQuotes(){
+  try{ return JSON.parse(localStorage.getItem('genbacho_quotes')||'[]'); }catch(e){ return []; }
+}
+function saveAll(){
+  localStorage.setItem('genbacho_sites', JSON.stringify(sites));
+  localStorage.setItem('genbacho_expenses', JSON.stringify(expenses));
+  localStorage.setItem('genbacho_quotes', JSON.stringify(quotes));
+}
+function resetAllData(){
+  if(!confirm('現場・経費・見積書のデータをすべて削除します。よろしいですか？'))return;
+  localStorage.removeItem('genbacho_sites');
+  localStorage.removeItem('genbacho_expenses');
+  localStorage.removeItem('genbacho_quotes');
+  location.reload();
+}
+
+let sites=loadData(), expenses=loadExpenses(), quotes=loadQuotes();
+let taxDisplay='excl', selectedPay='', selectedCat='';
+let currentImg=null; // base64
+let apiKey = localStorage.getItem('genbacho_apikey') || '';
+const TAX=0.10;
+
+// ── YAYOI ──
+const YAYOI={
+  '外注工賃':{d:'外注工賃',c:'未払金'},'材料費':{d:'材料費',c:'未払金'},
+  '燃料費':{d:'燃料費',c:'未払金'},'車両費':{d:'車両費',c:'未払金'},
+  '工具器具費':{d:'工具器具費',c:'未払金'},'地代家賃':{d:'地代家賃',c:'未払金'},
+  '通信費':{d:'通信費',c:'未払金'},'損害保険料':{d:'損害保険料',c:'未払金'},
+  '交際費':{d:'交際費',c:'未払金'},'消耗品費':{d:'消耗品費',c:'未払金'},
+  '旅費交通費':{d:'旅費交通費',c:'未払金'},'新聞図書費':{d:'新聞図書費',c:'未払金'},
+  '雑費':{d:'雑費',c:'未払金'},
+};
+const TAXCODE={0.10:'課税仕入10%',0.08:'課税仕入8%',0:'対象外'};
+
+// ── UTILS ──
+const fmt=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
+const fmtN=n=>Math.round(n).toLocaleString('ja-JP');
+const fmtD=d=>d?d.replace(/-/g,'/'):'';
+
+// カンマ入力フィールド用
+function toNum(s){return parseFloat(String(s).replace(/,/g,''))||0;}
+function formatInput(el){
+  const raw=String(el.value).replace(/,/g,'').replace(/[^0-9]/g,'');
+  if(raw===''){el.value='';return;}
+  el.value=parseInt(raw,10).toLocaleString('ja-JP');
+}
+function getInputNum(id){return toNum(document.getElementById(id).value);}
+
+function toggleTax(){
+  taxDisplay=taxDisplay==='excl'?'incl':'excl';
+  document.getElementById('taxLabel').textContent=taxDisplay==='excl'?'税抜':'税込';
+  renderAll();
+}
+function showPage(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='invoice')updateInvPrev();
+  if(name==='accounting')renderAcc();
+}
+function selChip(el,group,val){
+  el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  if(group==='pay')selectedPay=val;
+  if(group==='cat')selectedCat=val;
+}
+
+// ── API KEY ──
+function saveApiKey(){
+  const k=document.getElementById('apiKeyInput').value.trim();
+  if(!k.startsWith('sk-ant')){alert('APIキーの形式が正しくありません（sk-ant... で始まるキーを入力してください）');return;}
+  apiKey=k;
+  localStorage.setItem('genbacho_apikey',k);
+  document.getElementById('apiBanner').innerHTML=`<div class="icon">✅</div><div class="text"><strong>AI読み取り 有効</strong>領収書を撮影すると自動で金額・日付・店名を読み取ります。</div>`;
+  alert('APIキーを保存しました。AI読み取りが有効になりました。');
+}
+function initApiBanner(){
+  if(apiKey){
+    document.getElementById('apiBanner').innerHTML=`<div class="icon">✅</div><div class="text"><strong>AI読み取り 有効</strong>領収書を撮影すると自動で金額・日付・店名を読み取ります。<br><small style="color:var(--steel);cursor:pointer" onclick="clearApiKey()">APIキーを削除する</small></div>`;
+  }
+}
+function clearApiKey(){
+  if(!confirm('APIキーを削除しますか？'))return;
+  apiKey='';localStorage.removeItem('genbacho_apikey');location.reload();
+}
+
+// ── RECEIPT CAMERA ──
+function onImageSelected(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    currentImg=ev.target.result;
+    document.getElementById('imgPreview').src=currentImg;
+    document.getElementById('imgPreviewWrap').style.display='block';
+    if(apiKey) readReceiptWithAI(currentImg);
+    else{
+      document.getElementById('aiStatus').textContent='📷 画像を保存しました。金額・日付を手入力してください。';
+      document.getElementById('aiStatus').className='ai-status';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(){
+  currentImg=null;
+  document.getElementById('imgPreviewWrap').style.display='none';
+  document.getElementById('imgPreview').src='';
+  document.getElementById('aiStatus').textContent='';
+  document.getElementById('camInput').value='';
+}
+
+async function readReceiptWithAI(dataUrl){
+  const st=document.getElementById('aiStatus');
+  st.textContent='🤖 AI読み取り中...';
+  st.className='ai-status loading';
+  try{
+    const base64=dataUrl.split(',')[1];
+    const mediaType=dataUrl.split(';')[0].split(':')[1];
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({
+        model:'claude-opus-4-5',
+        max_tokens:300,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+            {type:'text',text:'この領収書・レシートから以下をJSON形式のみで返してください。他のテキストは一切不要。{"shop":"店名","amount":税抜金額の数値,"tax_rate":0.10か0.08か0,"date":"YYYY-MM-DD形式","description":"内容の簡潔な説明"}。金額が税込のみ表示なら税抜に変換（10%なら÷1.1）。日付が不明なら""。'}
+          ]
+        }]
+      })
+    });
+    const data=await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const text=data.content[0].text.trim();
+    const json=JSON.parse(text.replace(/```json|```/g,'').trim());
+    if(json.shop) document.getElementById('rShop').value=json.shop;
+    if(json.amount) document.getElementById('rAmt').value=Math.round(json.amount);
+    if(json.tax_rate!==undefined) document.getElementById('rTaxRate').value=json.tax_rate;
+    if(json.date) document.getElementById('rDate').value=json.date;
+    if(json.description && !document.getElementById('rDesc').value) document.getElementById('rDesc').value=json.description;
+    updateRP();
+    st.textContent='✅ AI読み取り完了。内容を確認してください。';
+    st.className='ai-status done';
+  }catch(err){
+    st.textContent='⚠️ 読み取り失敗。手入力してください。（'+err.message+')';
+    st.className='ai-status err';
+  }
+}
+
+function updateRP(){
+  const amt=parseFloat(document.getElementById('rAmt').value)||0;
+  const rate=parseFloat(document.getElementById('rTaxRate').value);
+  const prev=document.getElementById('recPrev');
+  if(amt>0){
+    prev.style.display='block';
+    const tax=amt*rate;
+    document.getElementById('rpAmt').textContent=fmt(amt);
+    document.getElementById('rpTaxLbl').textContent=rate===0?'非課税':`消費税${(rate*100).toFixed(0)}%`;
+    document.getElementById('rpTax').textContent=fmt(tax);
+    document.getElementById('rpTotal').textContent=fmt(amt+tax);
+  } else prev.style.display='none';
+}
+
+function addReceipt(){
+  const cat=document.getElementById('rCat').value;
+  const desc=document.getElementById('rDesc').value.trim();
+  const amt=parseFloat(document.getElementById('rAmt').value)||0;
+  const taxRate=parseFloat(document.getElementById('rTaxRate').value);
+  const date=document.getElementById('rDate').value;
+  const siteId=document.getElementById('rSite').value;
+  const invNo=document.getElementById('rInvNo').value.trim();
+  const shop=document.getElementById('rShop').value.trim();
+  if(!cat||amt===0){alert('勘定科目と金額は必須です');return;}
+  const tax=amt*taxRate;
+  expenses.push({
+    id:Date.now(),cat,
+    desc:desc||(shop?shop:'領収書'),
+    amt,taxRate,tax,total:amt+tax,
+    date,siteId,invNo,
+    img:currentImg,
+    fromReceipt:true,
+    shop
+  });
+  // reset receipt form
+  ['rShop','rAmt','rDate','rDesc','rInvNo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rTaxRate').value='0.10';
+  document.getElementById('rSite').value='';
+  document.getElementById('rCat').value='';
+  removeImage();
+  document.getElementById('recPrev').style.display='none';
+  renderAll();
+  alert('経費として登録しました。');
+}
+
+// ── SITE FORM ──
+let siteType='請負';
+function selSiteType(type){
+  siteType=type;
+  document.getElementById('siteTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===type));
+  document.getElementById('siteTypeUke').style.display=type==='請負'?'':'none';
+  document.getElementById('siteTypeJoyo').style.display=type==='常用'?'':'none';
+  updateSP();
+}
+function updateSP(){
+  let rev=0,sub=0,mat=0;
+  if(siteType==='請負'){
+    rev=getInputNum('sRev');sub=getInputNum('sSub');mat=getInputNum('sMat');
+  } else {
+    const unit=getInputNum('sUnitPrice');
+    const days=parseFloat(document.getElementById('sDays').value)||1;
+    const workers=parseFloat(document.getElementById('sWorkers').value)||1;
+    rev=unit*days*workers;sub=getInputNum('sSubJ');mat=0;
+  }
+  const prev=document.getElementById('sitePrev');
+  if(rev>0){
+    prev.style.display='block';
+    const rt=rev*TAX;
+    const profit=rev-sub-mat;
+    document.getElementById('pRev').textContent=fmt(rev);
+    document.getElementById('pRevTax').textContent=fmt(rt);
+    document.getElementById('pRevInc').textContent=fmt(rev+rt);
+    document.getElementById('pSub').textContent=fmt(sub);
+    document.getElementById('pMat').textContent=fmt(mat);
+    document.getElementById('pProfit').textContent=fmt(profit);
+    document.getElementById('pMargin').textContent=((profit/rev)*100).toFixed(1)+'%';
+  } else prev.style.display='none';
+}
+function addSite(){
+  const name=document.getElementById('sName').value.trim();
+  let rev=0,sub=0,mat=0,unitPrice=0,days=0,workers=0;
+  if(siteType==='請負'){
+    rev=getInputNum('sRev');sub=getInputNum('sSub');mat=getInputNum('sMat');
+  } else {
+    unitPrice=getInputNum('sUnitPrice');
+    days=parseFloat(document.getElementById('sDays').value)||1;
+    workers=parseFloat(document.getElementById('sWorkers').value)||1;
+    rev=unitPrice*days*workers;sub=getInputNum('sSubJ');mat=0;
+  }
+  const start=document.getElementById('sStart').value;
+  const end=document.getElementById('sEnd').value;
+  if(!name||rev===0){alert('現場名と金額は必須です');return;}
+  const profit=rev-sub-mat;
+  const margin=rev>0?((profit/rev)*100).toFixed(1):0;
+  sites.push({id:Date.now(),name,rev,sub,mat,profit,margin,start,end,payment:selectedPay,siteType,unitPrice,days,workers});
+  ['sName','sRev','sSub','sMat','sStart','sEnd','sUnitPrice','sDays','sWorkers','sSubJ'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('payChips').querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('siteTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent==='請負'));
+  siteType='請負';
+  document.getElementById('siteTypeUke').style.display='';
+  document.getElementById('siteTypeJoyo').style.display='none';
+  selectedPay='';document.getElementById('sitePrev').style.display='none';
+  renderAll();
+}
+
+// ── EXPENSE FORM ──
+function updateEP(){
+  const amt=getInputNum('eAmt');
+  const rate=parseFloat(document.getElementById('eTaxRate').value);
+  const prev=document.getElementById('expPrev');
+  if(amt>0){
+    prev.style.display='block';
+    const tax=amt*rate;
+    document.getElementById('epAmt').textContent=fmt(amt);
+    document.getElementById('epTaxLbl').textContent=rate===0?'非課税':`消費税${(rate*100).toFixed(0)}%`;
+    document.getElementById('epTax').textContent=fmt(tax);
+    document.getElementById('epTotal').textContent=fmt(amt+tax);
+  } else prev.style.display='none';
+}
+function addExpense(){
+  const cat=selectedCat;
+  const desc=document.getElementById('eDesc').value.trim();
+  const amt=getInputNum('eAmt');
+  const taxRate=parseFloat(document.getElementById('eTaxRate').value);
+  const date=document.getElementById('eDate').value;
+  const siteId=document.getElementById('eSite').value;
+  const invNo=document.getElementById('eInvNo').value.trim();
+  if(!cat||!desc||amt===0){alert('勘定科目・摘要・金額は必須です');return;}
+  const tax=amt*taxRate;
+  expenses.push({id:Date.now(),cat,desc,amt,taxRate,tax,total:amt+tax,date,siteId,invNo});
+  ['eDesc','eAmt','eDate','eInvNo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eTaxRate').value='0.10';
+  document.getElementById('eSite').value='';
+  document.getElementById('expCatChips').querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  selectedCat='';document.getElementById('expPrev').style.display='none';
+  renderAll();
+}
+
+// ── QUOTE FORM ──
+function updateQP(){
+  const amt=parseFloat(document.getElementById('qAmt').value)||0;
+  const prev=document.getElementById('quotePrev');
+  if(amt>0){
+    prev.style.display='block';
+    const tax=amt*TAX;
+    document.getElementById('qpAmt').textContent=fmt(amt);
+    document.getElementById('qpTax').textContent=fmt(tax);
+    document.getElementById('qpTotal').textContent=fmt(amt+tax);
+  } else prev.style.display='none';
+}
+function addQuote(){
+  const to=document.getElementById('qTo').value.trim();
+  const date=document.getElementById('qDate').value;
+  const expiry=document.getElementById('qExpiry').value;
+  const siteName=document.getElementById('qSiteName').value.trim();
+  const work=document.getElementById('qWork').value.trim();
+  const amt=parseFloat(document.getElementById('qAmt').value)||0;
+  const note=document.getElementById('qNote').value.trim();
+  if(!siteName||amt===0){alert('工事名と見積金額は必須です');return;}
+  quotes.push({id:Date.now(),to,date,expiry,siteName,work,amt,note,tax:amt*TAX,total:amt+amt*TAX});
+  ['qTo','qDate','qExpiry','qSiteName','qWork','qAmt','qNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('quotePrev').style.display='none';
+  renderAll();
+}
+
+// ── RENDER ──
+function renderAll(){
+  saveAll();
+  renderSummary();renderSites();renderExpenses();renderReceipts();renderQuotes();updateSelects();
+}
+
+function renderSummary(){
+  const totalRev=sites.reduce((a,s)=>a+s.rev,0);
+  const totalRevTax=totalRev*TAX;
+  const sitesExpAmt=sites.reduce((a,s)=>a+s.sub+s.mat,0);
+  const expAmt=expenses.reduce((a,e)=>a+e.amt,0);
+  const totalExp=sitesExpAmt+expAmt;
+  const totalExpTax=expenses.reduce((a,e)=>a+e.tax,0)+sitesExpAmt*TAX;
+  document.getElementById('sumCount').textContent=sites.length;
+  document.getElementById('sumRev').textContent=fmt(taxDisplay==='excl'?totalRev:totalRev+totalRevTax);
+  document.getElementById('sumExp').textContent=fmt(totalExp);
+  document.getElementById('sumProfit').textContent=fmt(totalRev-totalExp);
+  document.getElementById('sumTax').textContent=fmt(totalRevTax-totalExpTax);
+}
+
+function renderSites(){
+  const list=document.getElementById('sitesList');
+  const empty=document.getElementById('sitesEmpty');
+  if(sites.length===0){list.innerHTML='';list.appendChild(empty);return;}
+  empty.style.display='none';list.innerHTML='';
+  sites.forEach(s=>{
+    const div=document.createElement('div');div.className='sc';
+    const rt=s.rev*TAX;
+    const disp=taxDisplay==='excl'?fmt(s.rev):fmt(s.rev+rt);
+    const ds=s.start&&s.end?`${s.start} → ${s.end}`:s.start?`${s.start} 〜`:'日程未定';
+    div.innerHTML=`
+      <div class="sc-h">
+        <div><div class="sc-n">${s.name}${s.siteType==='常用'?'<span class="tag" style="background:#fef3c7;color:#92400e;margin-left:6px">常用</span>':''}</div><div class="sc-d">${ds}</div></div>
+        <div><div class="sc-al">${s.siteType==='常用'?'常用売上':'請負'}${taxDisplay==='excl'?'（税抜）':'（税込）'}</div><div class="sc-av">${disp}</div></div>
+      </div>
+      <div class="sc-b">
+        ${s.siteType==='常用'?`<div class="sc-r"><span>単価×${s.days}日×${s.workers}人</span><span class="sv">${fmt(s.unitPrice||0)}×${s.days}×${s.workers}</span></div>`:''}
+        <div class="sc-r"><span>外注工賃</span><span class="sv">${fmt(s.sub)}</span></div>
+        <div class="sc-r"><span>材料費</span><span class="sv">${fmt(s.mat)}</span></div>
+        <div class="sc-r"><span>仮受消費税（10%）</span><span class="sv">${fmt(rt)}</span></div>
+        <div class="sc-tags">
+          ${s.payment?`<span class="tag tr">${s.payment}</span>`:''}
+          <span class="tag tg">仕訳対応済</span>
+          <span class="tag tb">インボイス対応</span>
+        </div>
+      </div>
+      <div class="sc-f">
+        <div><div class="sc-pl">粗利益</div><div class="sc-pv">${fmt(s.profit)}</div></div>
+        <div style="text-align:right"><div class="sc-mg">粗利率 ${s.margin}%</div>
+          <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
+            <button class="bsm" onclick="editSite(${s.id})">編集</button>
+            <button class="bsm" style="color:var(--red)" onclick="delSite(${s.id})">削除</button>
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderExpenses(){
+  const list=document.getElementById('expensesList');
+  const empty=document.getElementById('expensesEmpty');
+  if(expenses.length===0){list.innerHTML='';list.appendChild(empty);return;}
+  empty.style.display='none';list.innerHTML='';
+  expenses.forEach(e=>{
+    const sn=e.siteId?(sites.find(s=>s.id==e.siteId)?.name||'—'):'現場外';
+    const div=document.createElement('div');div.className='ec';
+    const tp=(e.taxRate*100).toFixed(0);
+    div.innerHTML=`
+      <div style="flex:1;min-width:0">
+        <div class="ec-cat">${e.cat}${e.fromReceipt?'<span class="ai-badge">📷 領収書</span>':''}</div>
+        <div class="ec-desc">${e.desc}</div>
+        <div class="ec-meta">${e.date||'日付なし'} ／ ${sn}${e.invNo?' ／ <span style="color:var(--blue)">'+e.invNo+'</span>':''}</div>
+        ${e.img?`<img class="ec-img" src="${e.img}" onclick="openModal('${e.img}')">`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:10px">
+        <div class="ec-amt">${fmt(taxDisplay==='excl'?e.amt:e.total)}</div>
+        <div class="ec-tax">税${tp}% ＋${fmt(e.tax)}</div>
+        <button class="bsm" style="margin-top:4px;display:block" onclick="delExp(${e.id})">削除</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderReceipts(){
+  const list=document.getElementById('receiptList');
+  const empty=document.getElementById('receiptEmpty');
+  const recs=expenses.filter(e=>e.fromReceipt);
+  if(recs.length===0){list.innerHTML='';list.appendChild(empty);return;}
+  empty.style.display='none';list.innerHTML='';
+  recs.forEach(e=>{
+    const sn=e.siteId?(sites.find(s=>s.id==e.siteId)?.name||'—'):'現場外';
+    const div=document.createElement('div');div.className='ec';
+    div.innerHTML=`
+      <div style="flex:1;min-width:0">
+        <div class="ec-cat">${e.cat}</div>
+        <div class="ec-desc">${e.shop||e.desc}</div>
+        <div class="ec-meta">${e.date||'日付なし'} ／ ${sn}</div>
+        ${e.img?`<img class="ec-img" src="${e.img}" onclick="openModal('${e.img}')">`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:10px">
+        <div class="ec-amt">${fmt(e.amt)}</div>
+        <div class="ec-tax">税込${fmt(e.total)}</div>
+        <button class="bsm" style="margin-top:4px;display:block" onclick="delExp(${e.id})">削除</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderQuotes(){
+  const list=document.getElementById('quoteList');
+  const empty=document.getElementById('quoteEmpty');
+  if(quotes.length===0){list.innerHTML='';list.appendChild(empty);return;}
+  empty.style.display='none';list.innerHTML='';
+  quotes.forEach(q=>{
+    const div=document.createElement('div');div.className='qc';
+    div.innerHTML=`
+      <div class="qc-h">
+        <div><div class="qc-n">${q.siteName}</div><div class="qc-d">${q.date||'—'} ${q.expiry?'〜 有効期限: '+q.expiry:''}</div></div>
+        <div style="text-align:right"><div style="font-size:9px;color:#9ca3af">見積（税込）</div><div style="font-size:16px;font-weight:700;color:#fff;font-family:'DM Mono',monospace">${fmt(q.total)}</div></div>
+      </div>
+      <div class="qc-b">
+        ${q.to?`<div class="qc-r"><span>見積先</span><span class="qv">${q.to}</span></div>`:''}
+        <div class="qc-r"><span>工事内容</span><span class="qv">${q.work||'—'}</span></div>
+        <div class="qc-r"><span>見積金額（税抜）</span><span class="qv">${fmt(q.amt)}</span></div>
+        <div class="qc-r"><span>消費税10%</span><span class="qv">${fmt(q.tax)}</span></div>
+        ${q.note?`<div class="qc-r"><span>備考</span><span class="qv">${q.note}</span></div>`:''}
+      </div>
+      <div class="qc-f">
+        <span class="tag tb">見積書</span>
+        <div style="display:flex;gap:6px">
+          <button class="bsm" onclick="exportSingleQuotePDF(${q.id})">PDF</button>
+          <button class="bsm" onclick="delQuote(${q.id})">削除</button>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderAcc(){
+  const totalRev=sites.reduce((a,s)=>a+s.rev,0);
+  const totalRevTax=totalRev*TAX;
+  const totalSub=sites.reduce((a,s)=>a+s.sub,0)+expenses.filter(e=>e.cat==='外注工賃').reduce((a,e)=>a+e.amt,0);
+  const totalMat=sites.reduce((a,s)=>a+s.mat,0)+expenses.filter(e=>e.cat==='材料費').reduce((a,e)=>a+e.amt,0);
+  const other=expenses.filter(e=>e.cat!=='外注工賃'&&e.cat!=='材料費').reduce((a,e)=>a+e.amt,0);
+  const totalExpTax=expenses.reduce((a,e)=>a+e.tax,0)+sites.reduce((a,s)=>a+s.sub+s.mat,0)*TAX;
+  const income=totalRev-totalSub-totalMat-other;
+  const invTax=expenses.filter(e=>e.invNo&&e.invNo.startsWith('T')).reduce((a,e)=>a+e.tax,0);
+  document.getElementById('accRev').textContent=fmt(totalRev);
+  document.getElementById('accRevTax').textContent=fmt(totalRevTax);
+  document.getElementById('accSub').textContent=fmt(totalSub);
+  document.getElementById('accMat').textContent=fmt(totalMat);
+  document.getElementById('accOther').textContent=fmt(other);
+  document.getElementById('accExpTax').textContent=fmt(totalExpTax);
+  document.getElementById('accIncome').textContent=fmt(income);
+  document.getElementById('ctRev').textContent=fmt(totalRevTax);
+  document.getElementById('ctExp').textContent=fmt(totalExpTax);
+  document.getElementById('ctInv').textContent=fmt(invTax);
+  document.getElementById('ctPay').textContent=fmt(Math.max(0,totalRevTax-totalExpTax));
+  const cats={};
+  expenses.forEach(e=>{cats[e.cat]=(cats[e.cat]||0)+e.amt;});
+  sites.forEach(s=>{
+    if(s.sub>0)cats['外注工賃']=(cats['外注工賃']||0)+s.sub;
+    if(s.mat>0)cats['材料費']=(cats['材料費']||0)+s.mat;
+  });
+  const bd=document.getElementById('catBD');
+  bd.innerHTML='<div class="ar hd"><span class="al">勘定科目</span><span class="av">金額（税抜）</span></div>';
+  Object.entries(cats).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
+    const r=document.createElement('div');r.className='ar';
+    r.innerHTML=`<span class="al">${cat}</span><span class="av neg">${fmt(amt)}</span>`;
+    bd.appendChild(r);
+  });
+  if(!Object.keys(cats).length){
+    const r=document.createElement('div');r.className='ar';
+    r.innerHTML='<span class="al" style="color:var(--steel)">経費データなし</span><span class="av">—</span>';
+    bd.appendChild(r);
+  }
+}
+
+// ── INVOICE ──
+function updateInvPrev(){
+  const siteId=document.getElementById('iSite').value;
+  const site=sites.find(s=>s.id==siteId);
+  const myName=document.getElementById('iMyName').value||'（自社名）';
+  const myPerson=document.getElementById('iMyPerson').value||'';
+  const myRegNo=document.getElementById('iMyRegNo').value||'未設定';
+  const toName=document.getElementById('iTo').value||'（請求先）';
+  const invDate=document.getElementById('iDate').value||'—';
+  const box=document.getElementById('invPrev');
+  if(!site){box.innerHTML='<div style="color:var(--steel);text-align:center;padding:20px;font-size:13px">現場を選択するとプレビューが表示されます</div>';return;}
+  const rt=site.rev*TAX;const ri=site.rev+rt;
+  box.innerHTML=`
+    <div class="inv-title">適格請求書</div>
+    <div class="inv-sub">QUALIFIED INVOICE — インボイス制度対応</div>
+    <div class="inv-grid">
+      <div><div class="inv-fl">請求先</div><div class="inv-fv">${toName} 御中</div></div>
+      <div><div class="inv-fl">請求日</div><div class="inv-fv">${invDate}</div></div>
+      <div><div class="inv-fl">請求者</div><div class="inv-fv">${myName}${myPerson?'　'+myPerson:''}</div></div>
+      <div><div class="inv-fl">現場名</div><div class="inv-fv">${site.name}</div></div>
+    </div>
+    <table class="inv-tbl">
+      <thead><tr><th>品目</th><th class="rt">税抜金額</th><th class="rt">税率</th><th class="rt">消費税</th><th class="rt">税込金額</th></tr></thead>
+      <tbody><tr><td>${site.name}</td><td class="rt">${fmtN(site.rev)}</td><td class="rt">10%</td><td class="rt">${fmtN(rt)}</td><td class="rt">${fmtN(ri)}</td></tr></tbody>
+    </table>
+    <div class="inv-tots">
+      <div class="itr"><span>小計（税抜）</span><span class="tv">${fmt(site.rev)}</span></div>
+      <div class="itr"><span>消費税（10%）</span><span class="tv">${fmt(rt)}</span></div>
+      <div class="itr grand"><span>ご請求金額（税込）</span><span class="tv">${fmt(ri)}</span></div>
+    </div>
+    <div class="inv-reg">登録番号：${myRegNo}（適格請求書発行事業者）<br>入金条件：${site.payment||'—'}</div>`;
+}
+
+// ── SELECTS ──
+function updateSelects(){
+  const ids=['eSite','rSite','iSite'];
+  const defaults=['— 現場外経費 —','— 現場外 —','— 現場を選択 —'];
+  ids.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    const cur=el.value;
+    el.innerHTML=`<option value="">${defaults[i]}</option>`;
+    sites.forEach(s=>{el.innerHTML+=`<option value="${s.id}">${s.name}</option>`;});
+    el.value=cur;
+  });
+}
+
+// ── DELETE ──
+function delSite(id){sites=sites.filter(s=>s.id!==id);renderAll();}
+function delExp(id){expenses=expenses.filter(e=>e.id!==id);renderAll();}
+function delQuote(id){quotes=quotes.filter(q=>q.id!==id);renderAll();}
+
+// ── MODAL ──
+function openModal(src){
+  document.getElementById('modalImg').src=src;
+  document.getElementById('imgModal').classList.add('open');
+}
+function closeModal(){document.getElementById('imgModal').classList.remove('open');}
+
+// ── CSV ──
+function dlCSV(filename,rows){
+  const bom='\uFEFF';
+  const csv=bom+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=filename;a.click();
+}
+function exportExpCSV(){
+  if(!expenses.length){alert('経費データがありません');return;}
+  const hd=['伝票No','年月日','借方科目','借方補助科目','借方税区分','借方金額','借方消費税額','貸方科目','貸方補助科目','貸方税区分','貸方金額','貸方消費税額','摘要','番号','付箋1','付箋2'];
+  const rows=[hd];
+  expenses.forEach((e,i)=>{
+    const ac=YAYOI[e.cat]||{d:e.cat,c:'未払金'};
+    const tc=TAXCODE[e.taxRate]||'対象外';
+    const sn=e.siteId?(sites.find(s=>s.id==e.siteId)?.name||''):'';
+    const memo=sn?`${sn} ${e.desc}`:e.desc;
+    rows.push([i+1,fmtD(e.date),ac.d,'',tc,Math.round(e.amt),Math.round(e.tax),ac.c,'','',Math.round(e.total),'',memo,e.invNo||'','','']);
+  });
+  dlCSV('経費仕訳_弥生会計.csv',rows);
+}
+function exportSiteCSV(){
+  if(!sites.length){alert('現場データがありません');return;}
+  const hd=['伝票No','年月日','借方科目','借方補助科目','借方税区分','借方金額','借方消費税額','貸方科目','貸方補助科目','貸方税区分','貸方金額','貸方消費税額','摘要','番号','付箋1','付箋2'];
+  const rows=[hd];let no=1;
+  sites.forEach(s=>{
+    const d=fmtD(s.end||s.start);const rt=Math.round(s.rev*TAX);
+    rows.push([no++,d,'売掛金','','課税売上10%',Math.round(s.rev+rt),rt,'売上高','','',Math.round(s.rev+rt),'',s.name,'','','']);
+    if(s.sub>0){const st=Math.round(s.sub*TAX);rows.push([no++,d,'外注工賃','','課税仕入10%',Math.round(s.sub),st,'未払金','','',Math.round(s.sub+st),'',s.name,'','','']);}
+    if(s.mat>0){const mt=Math.round(s.mat*TAX);rows.push([no++,d,'材料費','','課税仕入10%',Math.round(s.mat),mt,'未払金','','',Math.round(s.mat+mt),'',s.name,'','','']);}
+  });
+  dlCSV('売上仕訳_弥生会計.csv',rows);
+}
+function exportDetailCSV(){
+  if(!expenses.length&&!sites.length){alert('データがありません');return;}
+  const hd=['日付','勘定科目','摘要','現場名','税抜金額','消費税','税込金額','税区分','インボイス番号','領収書'];
+  const rows=[hd];
+  expenses.forEach(e=>{
+    const sn=e.siteId?(sites.find(s=>s.id==e.siteId)?.name||'現場外'):'現場外';
+    rows.push([e.date||'',e.cat,e.desc,sn,Math.round(e.amt),Math.round(e.tax),Math.round(e.total),TAXCODE[e.taxRate]||'対象外',e.invNo||'',e.fromReceipt?'○':'']);
+  });
+  dlCSV('経費明細_確定申告用.csv',rows);
+}
+
+// ── PDF: INVOICE ──
+async function exportInvoicePDF(){
+  const siteId=document.getElementById('iSite').value;
+  const site=sites.find(s=>s.id==siteId);
+  if(!site){alert('現場を選択してください');return;}
+  const myName=document.getElementById('iMyName').value||'（自社名）';
+  const myPerson=document.getElementById('iMyPerson').value||'';
+  const myRegNo=document.getElementById('iMyRegNo').value||'未設定';
+  const toName=document.getElementById('iTo').value||'（請求先）';
+  const invDate=document.getElementById('iDate').value||'—';
+  const rt=Math.round(site.rev*TAX),ri=site.rev+rt;
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Noto Sans JP',sans-serif;padding:40px;color:#111;font-size:13px;background:#fff;}
+    h1{font-size:28px;font-weight:900;letter-spacing:.05em;margin-bottom:4px;}
+    .sub{color:#888;font-size:11px;margin-bottom:16px;}
+    .meta{display:flex;justify-content:space-between;margin-bottom:20px;}
+    hr{border:none;border-top:2px solid #111;margin-bottom:16px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;margin-bottom:20px;}
+    .label{color:#888;font-size:10px;margin-bottom:4px;}
+    .name{font-size:15px;font-weight:700;}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    thead{background:#111;color:#fff;}
+    th{padding:8px 10px;font-size:11px;font-weight:700;text-align:left;}
+    th:not(:first-child){text-align:right;}
+    td{padding:8px 10px;font-size:12px;border-bottom:1px solid #e5e7eb;}
+    td:not(:first-child){text-align:right;}
+    .totals{text-align:right;margin-bottom:20px;}
+    .totals div{margin-bottom:4px;font-size:12px;}
+    .total-main{font-size:18px;font-weight:900;color:#b91c1c;margin-top:8px;}
+    .footer{color:#888;font-size:10px;margin-top:24px;}
+    .terms div{margin-bottom:4px;}
+  </style></head><body>
+  <h1>適格請求書</h1>
+  <div class="sub">インボイス制度対応 Qualified Invoice</div>
+  <hr>
+  <div class="meta">
+    <div></div>
+    <div style="text-align:right;font-size:12px;">
+      <div>発行日：${invDate}</div>
+      <div>登録番号：${myRegNo}</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-bottom:24px;">
+    <div>
+      <div class="label">請求先</div>
+      <div class="name">${toName} 御中</div>
+    </div>
+    <div>
+      <div class="label">請求元</div>
+      <div class="name">${myName}</div>
+      ${myPerson?`<div style="font-size:12px;margin-top:2px;">${myPerson}</div>`:''}
+    </div>
+  </div>
+  <div style="margin-bottom:8px;font-size:11px;color:#888;">工事名</div>
+  <div style="font-size:16px;font-weight:700;margin-bottom:16px;">${site.name}</div>
+  <table>
+    <thead><tr><th>摘要</th><th>税抜金額</th><th>消費税率</th><th>消費税額</th><th>税込金額</th></tr></thead>
+    <tbody><tr>
+      <td>${site.name}</td>
+      <td>${fmtN(site.rev)}</td>
+      <td>10%</td>
+      <td>${fmtN(rt)}</td>
+      <td>${fmtN(ri)}</td>
+    </tr></tbody>
+  </table>
+  <div class="totals">
+    <div>小計（税抜）：¥${fmtN(site.rev)}</div>
+    <div style="color:#1e40af;">消費税（10%）：¥${fmtN(rt)}</div>
+    <div class="total-main">合計（税込）：¥${fmtN(ri)}</div>
+  </div>
+  <div class="terms">
+    <div>支払条件：${site.payment||'—'}</div>
+    <div>インボイス登録番号：${myRegNo}</div>
+  </div>
+  <div class="footer">※本書は適格請求書等保存方式（インボイス制度）に対応した適格請求書です。</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── PDF: QUOTE ──
+function exportQuotePDF(){
+  const to=document.getElementById('qTo').value||'（見積先）';
+  const date=document.getElementById('qDate').value||'—';
+  const expiry=document.getElementById('qExpiry').value||'—';
+  const siteName=document.getElementById('qSiteName').value||'（工事名）';
+  const work=document.getElementById('qWork').value||'—';
+  const amt=getInputNum('qAmt');
+  const note=document.getElementById('qNote').value||'';
+  if(amt===0){alert('見積金額を入力してください');return;}
+  generateQuotePDFDoc(to,date,expiry,siteName,work,amt,note);
+}
+function exportSingleQuotePDF(id){
+  const q=quotes.find(x=>x.id===id);if(!q)return;
+  generateQuotePDFDoc(q.to||'（見積先）',q.date||'—',q.expiry||'—',q.siteName,q.work||'—',q.amt,q.note||'');
+}
+function generateQuotePDFDoc(to,date,expiry,siteName,work,amt,note){
+  const tax=Math.round(amt*TAX),total=amt+tax;
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Noto Sans JP',sans-serif;padding:40px;color:#111;font-size:13px;background:#fff;}
+    h1{font-size:28px;font-weight:900;letter-spacing:.05em;margin-bottom:4px;}
+    .sub{color:#888;font-size:11px;margin-bottom:16px;}
+    hr{border:none;border-top:2px solid #111;margin-bottom:16px;}
+    .label{color:#888;font-size:10px;margin-bottom:4px;}
+    .name{font-size:15px;font-weight:700;margin-bottom:16px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    thead{background:#111;color:#fff;}
+    th{padding:8px 10px;font-size:11px;font-weight:700;text-align:left;}
+    th:not(:first-child){text-align:right;}
+    td{padding:8px 10px;font-size:12px;border-bottom:1px solid #e5e7eb;}
+    td:not(:first-child){text-align:right;}
+    .totals{text-align:right;margin-bottom:20px;}
+    .totals div{margin-bottom:4px;font-size:12px;}
+    .total-main{font-size:18px;font-weight:900;color:#b91c1c;margin-top:8px;}
+    .footer{color:#888;font-size:10px;margin-top:24px;}
+  </style></head><body>
+  <h1>見積書</h1>
+  <div class="sub">Date: ${date}　有効期限: ${expiry}</div>
+  <hr>
+  <div class="label">見積先</div>
+  <div class="name">${to} 御中</div>
+  <div class="label">工事名</div>
+  <div style="font-size:16px;font-weight:700;margin-bottom:16px;">${siteName}</div>
+  <table>
+    <thead><tr><th>工事内容</th><th>税抜金額</th><th>消費税（10%）</th><th>税込合計</th></tr></thead>
+    <tbody><tr>
+      <td>${work}</td>
+      <td>¥${fmtN(amt)}</td>
+      <td>¥${fmtN(tax)}</td>
+      <td>¥${fmtN(total)}</td>
+    </tr></tbody>
+  </table>
+  <div class="totals">
+    <div>小計（税抜）：¥${fmtN(amt)}</div>
+    <div style="color:#1e40af;">消費税（10%）：¥${fmtN(tax)}</div>
+    <div class="total-main">見積合計（税込）：¥${fmtN(total)}</div>
+  </div>
+  ${note?`<div style="font-size:12px;margin-bottom:8px;">備考：${note}</div>`:''}
+  <div class="footer">有効期限：${expiry}　期限を過ぎた場合は再見積もりとなる場合があります。</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── PDF: SUMMARY ──
+function exportSummaryPDF(){
+  if(!sites.length&&!expenses.length){alert('データがありません');return;}
+  const totalRev=sites.reduce((a,s)=>a+s.rev,0);
+  const totalRevTax=Math.round(totalRev*TAX);
+  const sitesExp=sites.reduce((a,s)=>a+s.sub+s.mat,0);
+  const otherExp=expenses.reduce((a,e)=>a+e.amt,0);
+  const totalExp=sitesExp+otherExp;
+  const income=totalRev-totalExp;
+  const totalExpTax=expenses.reduce((a,e)=>a+e.tax,0)+sitesExp*TAX;
+  const payTax=Math.max(0,totalRevTax-totalExpTax);
+  const today=new Date().toLocaleDateString('ja-JP');
+  const siteRows=sites.map(s=>`<tr><td>${s.name}</td><td style="text-align:right">¥${fmtN(s.rev)}</td><td style="text-align:right">¥${fmtN(s.profit)}</td><td style="text-align:right">${s.margin}%</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Noto Sans JP',sans-serif;padding:40px;color:#111;font-size:13px;}
+    h1{font-size:24px;font-weight:900;margin-bottom:4px;}
+    .sub{color:#888;font-size:11px;margin-bottom:16px;}
+    hr{border:none;border-top:2px solid #111;margin-bottom:20px;}
+    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:13px;}
+    .row.tot{font-weight:700;font-size:15px;}
+    .sec{font-size:11px;font-weight:700;color:#888;margin:20px 0 8px;letter-spacing:.05em;}
+    table{width:100%;border-collapse:collapse;margin-top:8px;}
+    th{background:#111;color:#fff;padding:7px 10px;font-size:11px;text-align:left;}
+    th:not(:first-child){text-align:right;}
+    td{padding:7px 10px;border-bottom:1px solid #e5e7eb;font-size:12px;}
+  </style></head><body>
+  <h1>損益サマリー</h1>
+  <div class="sub">現場帳 — 出力日：${today}</div>
+  <hr>
+  <div class="row"><span>売上高（税抜）</span><span style="color:#166534">¥${fmtN(totalRev)}</span></div>
+  <div class="row"><span>　仮受消費税</span><span style="color:#1e40af">¥${fmtN(totalRevTax)}</span></div>
+  <div class="row"><span>外注工賃・材料費（現場）</span><span style="color:#b91c1c">¥${fmtN(sitesExp)}</span></div>
+  <div class="row"><span>その他経費</span><span style="color:#b91c1c">¥${fmtN(otherExp)}</span></div>
+  <div class="row"><span>　仮払消費税</span><span style="color:#1e40af">¥${fmtN(Math.round(totalExpTax))}</span></div>
+  <div class="row tot"><span>所得（概算）</span><span>¥${fmtN(income)}</span></div>
+  <div class="row" style="margin-top:8px"><span>消費税 納付額（概算）</span><span style="color:#92400e">¥${fmtN(payTax)}</span></div>
+  <div class="sec">現場別明細（${sites.length}件）</div>
+  <table><thead><tr><th>現場名</th><th>請負金額</th><th>粗利</th><th>粗利率</th></tr></thead>
+  <tbody>${siteRows}</tbody></table>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── INIT ──
+initApiBanner();
+renderAll();
+
+// ── PWA: Service Worker登録 ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
+  });
+}
+
+// ── PWA: インストール促進 ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('installBanner');
+  if(banner) banner.style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  const banner = document.getElementById('installBanner');
+  if(banner) banner.style.display = 'none';
+});
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{ deferredPrompt=null; });
+  }
+}
+
+// ── PIN LOCK ──
+let pinBuffer='';
+let pinMode=''; // 'setup' or 'unlock'
+
+function initPin(){
+  const saved=localStorage.getItem('genbacho_pin');
+  const overlay=document.getElementById('pinOverlay');
+  if(!saved){
+    pinMode='setup';
+    document.getElementById('pinSetupNote').style.display='block';
+    document.getElementById('pinLabel').textContent='新しいPINを設定してください';
+    overlay.style.display='flex';
+  } else {
+    pinMode='unlock';
+    overlay.style.display='flex';
+  }
+}
+
+function pinInput(n){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=n;
+  updatePinDots();
+  if(pinBuffer.length===4) setTimeout(pinSubmit,150);
+}
+
+function pinDelete(){
+  pinBuffer=pinBuffer.slice(0,-1);
+  updatePinDots();
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('dot'+i);
+    dot.style.background=i<pinBuffer.length?'#f87171':'transparent';
+    dot.style.borderColor=i<pinBuffer.length?'#f87171':'#374151';
+  }
+}
+
+function pinSubmit(){
+  const saved=localStorage.getItem('genbacho_pin');
+  if(pinMode==='setup'){
+    localStorage.setItem('genbacho_pin', pinBuffer);
+    document.getElementById('pinOverlay').style.display='none';
+    renderAll();
+  } else {
+    if(pinBuffer===saved){
+      document.getElementById('pinOverlay').style.display='none';
+      renderAll();
+    } else {
+      pinBuffer='';
+      updatePinDots();
+      document.getElementById('pinLabel').textContent='PINが違います。もう一度';
+      document.getElementById('pinLabel').style.color='#f87171';
+      setTimeout(()=>{
+        document.getElementById('pinLabel').textContent='PINを入力してください';
+        document.getElementById('pinLabel').style.color='#6b7280';
+      },1500);
+    }
+  }
+}
+
+// PIN設定リセット（出力ページから）
+function resetPin(){
+  if(!confirm('PINをリセットしますか？次回起動時に新しいPINを設定できます。'))return;
+  localStorage.removeItem('genbacho_pin');
+  alert('PINをリセットしました。ページを再読み込みしてください。');
+  location.reload();
+}
+
+// ── SITE EDIT ──
+let editingSiteId=null, editingPay='', editingType='請負';
+function editSite(id){
+  const s=sites.find(x=>x.id===id);if(!s)return;
+  editingSiteId=id;
+  editingType=s.siteType||'請負';
+  editingPay=s.payment||'';
+  document.getElementById('eName').value=s.name;
+  document.getElementById('eStart').value=s.start||'';
+  document.getElementById('eEnd').value=s.end||'';
+  // type chips
+  document.getElementById('editTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===editingType));
+  document.getElementById('editTypeUke').style.display=editingType==='請負'?'':'none';
+  document.getElementById('editTypeJoyo').style.display=editingType==='常用'?'':'none';
+  if(editingType==='請負'){
+    document.getElementById('eRev').value=s.rev?fmtN(s.rev):'';
+    document.getElementById('eSubEdit').value=s.sub?fmtN(s.sub):'';
+    document.getElementById('eMatEdit').value=s.mat?fmtN(s.mat):'';
+  } else {
+    document.getElementById('eUnitPrice').value=s.unitPrice?fmtN(s.unitPrice):'';
+    document.getElementById('eDays').value=s.days||1;
+    document.getElementById('eWorkers').value=s.workers||1;
+    document.getElementById('eSubJ2').value=s.sub?fmtN(s.sub):'';
+  }
+  // pay chips
+  document.getElementById('editPayChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===editingPay));
+  document.getElementById('siteEditModal').style.display='flex';
+}
+function selEditType(type){
+  editingType=type;
+  document.getElementById('editTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===type));
+  document.getElementById('editTypeUke').style.display=type==='請負'?'':'none';
+  document.getElementById('editTypeJoyo').style.display=type==='常用'?'':'none';
+}
+function selEditPay(p){
+  editingPay=p;
+  document.getElementById('editPayChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===p));
+}
+function closeSiteEdit(){document.getElementById('siteEditModal').style.display='none';}
+function saveSiteEdit(){
+  const s=sites.find(x=>x.id===editingSiteId);if(!s)return;
+  s.name=document.getElementById('eName').value.trim()||s.name;
+  s.siteType=editingType;
+  s.start=document.getElementById('eStart').value;
+  s.end=document.getElementById('eEnd').value;
+  s.payment=editingPay;
+  if(editingType==='請負'){
+    s.rev=toNum(document.getElementById('eRev').value);
+    s.sub=toNum(document.getElementById('eSubEdit').value);
+    s.mat=toNum(document.getElementById('eMatEdit').value);
+    s.unitPrice=0;s.days=0;s.workers=0;
+  } else {
+    s.unitPrice=toNum(document.getElementById('eUnitPrice').value);
+    s.days=parseFloat(document.getElementById('eDays').value)||1;
+    s.workers=parseFloat(document.getElementById('eWorkers').value)||1;
+    s.rev=s.unitPrice*s.days*s.workers;
+    s.sub=toNum(document.getElementById('eSubJ2').value);
+    s.mat=0;
+  }
+  s.profit=s.rev-s.sub-s.mat;
+  s.margin=s.rev>0?((s.profit/s.rev)*100).toFixed(1):0;
+  closeSiteEdit();
+  renderAll();
+}
+
+// ── AUTO PIN LOCK ──
+let pinLockTimer=null;
+const PIN_TIMEOUT=60000; // 1分操作なしでロック
+function resetPinTimer(){
+  if(pinLockTimer)clearTimeout(pinLockTimer);
+  pinLockTimer=setTimeout(()=>{
+    const pin=localStorage.getItem('genbacho_pin');
+    if(pin){
+      pinBuffer='';
+      updatePinDots();
+      document.getElementById('pinLabel').textContent='PINを入力してください';
+      document.getElementById('pinLabel').style.color='#6b7280';
+      document.getElementById('pinSetupNote').style.display='none';
+      pinMode='unlock';
+      document.getElementById('pinOverlay').style.display='flex';
+    }
+  },PIN_TIMEOUT);
+}
+// タッチ・クリック・キー操作でタイマーリセット
+['touchstart','mousedown','keydown','scroll'].forEach(ev=>
+  document.addEventListener(ev,resetPinTimer,{passive:true})
+);
+// ページ非表示になったら即ロック
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    const pin=localStorage.getItem('genbacho_pin');
+    if(pin){
+      pinBuffer='';
+      updatePinDots();
+      document.getElementById('pinLabel').textContent='PINを入力してください';
+      document.getElementById('pinLabel').style.color='#6b7280';
+      document.getElementById('pinSetupNote').style.display='none';
+      pinMode='unlock';
+      document.getElementById('pinOverlay').style.display='flex';
+    }
+  }
+});
+window.addEventListener('load',()=>{ initPin(); resetPinTimer(); });
+</script>
+</body>
+</html>
