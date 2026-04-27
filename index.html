@@ -684,6 +684,9 @@ function getInputNum(id){return toNum(document.getElementById(id).value);}
 function toggleTax(){
   taxDisplay=taxDisplay==='excl'?'incl':'excl';
   document.getElementById('taxLabel').textContent=taxDisplay==='excl'?'税抜':'税込';
+  updateSP();
+  updateEP();
+  updateRP();
   renderAll();
 }
 function showPage(name,el){
