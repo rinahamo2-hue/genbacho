@@ -22,7 +22,8 @@
   --blue:#1e40af;--blue-l:#dbeafe;--gold:#92400e;--gold-l:#fef3c7;--steel:#6b7280;--border:#d1d5db;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;font-variant-numeric:lining-nums;}
+.fi,.fi.mono{font-variant-numeric:lining-nums;}
 
 /* HEADER */
 .hdr{background:var(--ink);padding:0 16px;position:sticky;top:0;z-index:200;}
@@ -274,10 +275,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
   <div class="sec">現場を追加</div>
   <div class="card">
     <div class="fr"><label class="fl">現場名</label><input class="fi" id="sName" placeholder="例：○○工事" type="text"></div>
-    <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="sRev" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
-    <div class="g2">
-      <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSub" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
-      <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="sMat" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+    <div class="fr">
+      <label class="fl">工事種別</label>
+      <div class="chips" id="siteTypeChips">
+        <div class="chip sel" onclick="selSiteType('請負')">請負</div>
+        <div class="chip" onclick="selSiteType('常用')">常用</div>
+      </div>
+    </div>
+    <!-- 請負フィールド -->
+    <div id="siteTypeUke">
+      <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="sRev" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+      <div class="g2">
+        <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSub" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+        <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="sMat" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+      </div>
+    </div>
+    <!-- 常用フィールド -->
+    <div id="siteTypeJoyo" style="display:none">
+      <div class="g3">
+        <div class="fr"><label class="fl">単価（1人工・税抜）</label><input class="fi mono" id="sUnitPrice" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+        <div class="fr"><label class="fl">日数（日）</label><input class="fi mono" id="sDays" placeholder="1" type="text" inputmode="numeric" oninput="updateSP()"></div>
+        <div class="fr"><label class="fl">人数</label><input class="fi mono" id="sWorkers" placeholder="1" type="text" inputmode="numeric" oninput="updateSP()"></div>
+      </div>
+      <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSubJ" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
     </div>
     <div class="g2">
       <div class="fr"><label class="fl">着手日</label><input class="fi" id="sStart" type="date"></div>
@@ -527,6 +547,54 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
   </div>
 </div>
 
+<!-- MODAL: site edit -->
+<div class="modal-bg" id="siteEditModal" onclick="if(event.target===this)closeSiteEdit()">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-h"><span>現場を編集</span><button class="modal-close" onclick="closeSiteEdit()">×</button></div>
+    <div class="modal-body" style="padding:16px">
+      <div class="fr"><label class="fl">現場名</label><input class="fi" id="eName" type="text"></div>
+      <div class="fr">
+        <label class="fl">工事種別</label>
+        <div class="chips" id="editTypeChips">
+          <div class="chip sel" onclick="selEditType('請負')">請負</div>
+          <div class="chip" onclick="selEditType('常用')">常用</div>
+        </div>
+      </div>
+      <div id="editTypeUke">
+        <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="eRev" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+        <div class="g2">
+          <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="eSubEdit" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+          <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="eMatEdit" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+        </div>
+      </div>
+      <div id="editTypeJoyo" style="display:none">
+        <div class="g3">
+          <div class="fr"><label class="fl">単価（税抜）</label><input class="fi mono" id="eUnitPrice" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+          <div class="fr"><label class="fl">日数</label><input class="fi mono" id="eDays" type="text" inputmode="numeric"></div>
+          <div class="fr"><label class="fl">人数</label><input class="fi mono" id="eWorkers" type="text" inputmode="numeric"></div>
+        </div>
+        <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="eSubJ2" type="text" inputmode="numeric" oninput="formatInput(this)"></div>
+      </div>
+      <div class="g2">
+        <div class="fr"><label class="fl">着手日</label><input class="fi" id="eStart" type="date"></div>
+        <div class="fr"><label class="fl">完了予定日</label><input class="fi" id="eEnd" type="date"></div>
+      </div>
+      <div class="fr">
+        <label class="fl">入金条件</label>
+        <div class="chips" id="editPayChips">
+          <div class="chip" onclick="selEditPay('完了後即時')">完了後即時</div>
+          <div class="chip" onclick="selEditPay('月末締翌月払')">月末締翌月払</div>
+          <div class="chip" onclick="selEditPay('検収後30日')">検収後30日</div>
+          <div class="chip" onclick="selEditPay('前払い50%')">前払い50%</div>
+          <div class="chip" onclick="selEditPay('手形90日')">手形90日</div>
+          <div class="chip" onclick="selEditPay('その他')">その他</div>
+        </div>
+      </div>
+      <button class="btn btn-p" style="margin-top:8px" onclick="saveSiteEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── STATE ──
 function loadData(){
@@ -734,10 +802,24 @@ function addReceipt(){
 }
 
 // ── SITE FORM ──
+let siteType='請負';
+function selSiteType(type){
+  siteType=type;
+  document.getElementById('siteTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===type));
+  document.getElementById('siteTypeUke').style.display=type==='請負'?'':'none';
+  document.getElementById('siteTypeJoyo').style.display=type==='常用'?'':'none';
+  updateSP();
+}
 function updateSP(){
-  const rev=getInputNum('sRev');
-  const sub=getInputNum('sSub');
-  const mat=getInputNum('sMat');
+  let rev=0,sub=0,mat=0;
+  if(siteType==='請負'){
+    rev=getInputNum('sRev');sub=getInputNum('sSub');mat=getInputNum('sMat');
+  } else {
+    const unit=getInputNum('sUnitPrice');
+    const days=parseFloat(document.getElementById('sDays').value)||1;
+    const workers=parseFloat(document.getElementById('sWorkers').value)||1;
+    rev=unit*days*workers;sub=getInputNum('sSubJ');mat=0;
+  }
   const prev=document.getElementById('sitePrev');
   if(rev>0){
     prev.style.display='block';
@@ -754,17 +836,27 @@ function updateSP(){
 }
 function addSite(){
   const name=document.getElementById('sName').value.trim();
-  const rev=getInputNum('sRev');
-  const sub=getInputNum('sSub');
-  const mat=getInputNum('sMat');
+  let rev=0,sub=0,mat=0,unitPrice=0,days=0,workers=0;
+  if(siteType==='請負'){
+    rev=getInputNum('sRev');sub=getInputNum('sSub');mat=getInputNum('sMat');
+  } else {
+    unitPrice=getInputNum('sUnitPrice');
+    days=parseFloat(document.getElementById('sDays').value)||1;
+    workers=parseFloat(document.getElementById('sWorkers').value)||1;
+    rev=unitPrice*days*workers;sub=getInputNum('sSubJ');mat=0;
+  }
   const start=document.getElementById('sStart').value;
   const end=document.getElementById('sEnd').value;
-  if(!name||rev===0){alert('現場名と請負金額は必須です');return;}
+  if(!name||rev===0){alert('現場名と金額は必須です');return;}
   const profit=rev-sub-mat;
   const margin=rev>0?((profit/rev)*100).toFixed(1):0;
-  sites.push({id:Date.now(),name,rev,sub,mat,profit,margin,start,end,payment:selectedPay});
-  ['sName','sRev','sSub','sMat','sStart','sEnd'].forEach(id=>document.getElementById(id).value='');
+  sites.push({id:Date.now(),name,rev,sub,mat,profit,margin,start,end,payment:selectedPay,siteType,unitPrice,days,workers});
+  ['sName','sRev','sSub','sMat','sStart','sEnd','sUnitPrice','sDays','sWorkers','sSubJ'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('payChips').querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('siteTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent==='請負'));
+  siteType='請負';
+  document.getElementById('siteTypeUke').style.display='';
+  document.getElementById('siteTypeJoyo').style.display='none';
   selectedPay='';document.getElementById('sitePrev').style.display='none';
   renderAll();
 }
@@ -861,10 +953,11 @@ function renderSites(){
     const ds=s.start&&s.end?`${s.start} → ${s.end}`:s.start?`${s.start} 〜`:'日程未定';
     div.innerHTML=`
       <div class="sc-h">
-        <div><div class="sc-n">${s.name}</div><div class="sc-d">${ds}</div></div>
-        <div><div class="sc-al">請負${taxDisplay==='excl'?'（税抜）':'（税込）'}</div><div class="sc-av">${disp}</div></div>
+        <div><div class="sc-n">${s.name}${s.siteType==='常用'?'<span class="tag" style="background:#fef3c7;color:#92400e;margin-left:6px">常用</span>':''}</div><div class="sc-d">${ds}</div></div>
+        <div><div class="sc-al">${s.siteType==='常用'?'常用売上':'請負'}${taxDisplay==='excl'?'（税抜）':'（税込）'}</div><div class="sc-av">${disp}</div></div>
       </div>
       <div class="sc-b">
+        ${s.siteType==='常用'?`<div class="sc-r"><span>単価×${s.days}日×${s.workers}人</span><span class="sv">${fmt(s.unitPrice||0)}×${s.days}×${s.workers}</span></div>`:''}
         <div class="sc-r"><span>外注工賃</span><span class="sv">${fmt(s.sub)}</span></div>
         <div class="sc-r"><span>材料費</span><span class="sv">${fmt(s.mat)}</span></div>
         <div class="sc-r"><span>仮受消費税（10%）</span><span class="sv">${fmt(rt)}</span></div>
@@ -877,7 +970,11 @@ function renderSites(){
       <div class="sc-f">
         <div><div class="sc-pl">粗利益</div><div class="sc-pv">${fmt(s.profit)}</div></div>
         <div style="text-align:right"><div class="sc-mg">粗利率 ${s.margin}%</div>
-          <button class="bsm" style="margin-top:4px" onclick="delSite(${s.id})">削除</button></div>
+          <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
+            <button class="bsm" onclick="editSite(${s.id})">編集</button>
+            <button class="bsm" style="color:var(--red)" onclick="delSite(${s.id})">削除</button>
+          </div>
+        </div>
       </div>`;
     list.appendChild(div);
   });
@@ -1409,7 +1506,109 @@ function resetPin(){
   location.reload();
 }
 
-window.addEventListener('DOMContentLoaded', initPin);
+// ── SITE EDIT ──
+let editingSiteId=null, editingPay='', editingType='請負';
+function editSite(id){
+  const s=sites.find(x=>x.id===id);if(!s)return;
+  editingSiteId=id;
+  editingType=s.siteType||'請負';
+  editingPay=s.payment||'';
+  document.getElementById('eName').value=s.name;
+  document.getElementById('eStart').value=s.start||'';
+  document.getElementById('eEnd').value=s.end||'';
+  // type chips
+  document.getElementById('editTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===editingType));
+  document.getElementById('editTypeUke').style.display=editingType==='請負'?'':'none';
+  document.getElementById('editTypeJoyo').style.display=editingType==='常用'?'':'none';
+  if(editingType==='請負'){
+    document.getElementById('eRev').value=s.rev?fmtN(s.rev):'';
+    document.getElementById('eSubEdit').value=s.sub?fmtN(s.sub):'';
+    document.getElementById('eMatEdit').value=s.mat?fmtN(s.mat):'';
+  } else {
+    document.getElementById('eUnitPrice').value=s.unitPrice?fmtN(s.unitPrice):'';
+    document.getElementById('eDays').value=s.days||1;
+    document.getElementById('eWorkers').value=s.workers||1;
+    document.getElementById('eSubJ2').value=s.sub?fmtN(s.sub):'';
+  }
+  // pay chips
+  document.getElementById('editPayChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===editingPay));
+  document.getElementById('siteEditModal').style.display='flex';
+}
+function selEditType(type){
+  editingType=type;
+  document.getElementById('editTypeChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===type));
+  document.getElementById('editTypeUke').style.display=type==='請負'?'':'none';
+  document.getElementById('editTypeJoyo').style.display=type==='常用'?'':'none';
+}
+function selEditPay(p){
+  editingPay=p;
+  document.getElementById('editPayChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.textContent===p));
+}
+function closeSiteEdit(){document.getElementById('siteEditModal').style.display='none';}
+function saveSiteEdit(){
+  const s=sites.find(x=>x.id===editingSiteId);if(!s)return;
+  s.name=document.getElementById('eName').value.trim()||s.name;
+  s.siteType=editingType;
+  s.start=document.getElementById('eStart').value;
+  s.end=document.getElementById('eEnd').value;
+  s.payment=editingPay;
+  if(editingType==='請負'){
+    s.rev=toNum(document.getElementById('eRev').value);
+    s.sub=toNum(document.getElementById('eSubEdit').value);
+    s.mat=toNum(document.getElementById('eMatEdit').value);
+    s.unitPrice=0;s.days=0;s.workers=0;
+  } else {
+    s.unitPrice=toNum(document.getElementById('eUnitPrice').value);
+    s.days=parseFloat(document.getElementById('eDays').value)||1;
+    s.workers=parseFloat(document.getElementById('eWorkers').value)||1;
+    s.rev=s.unitPrice*s.days*s.workers;
+    s.sub=toNum(document.getElementById('eSubJ2').value);
+    s.mat=0;
+  }
+  s.profit=s.rev-s.sub-s.mat;
+  s.margin=s.rev>0?((s.profit/s.rev)*100).toFixed(1):0;
+  closeSiteEdit();
+  renderAll();
+}
+
+// ── AUTO PIN LOCK ──
+let pinLockTimer=null;
+const PIN_TIMEOUT=60000; // 1分操作なしでロック
+function resetPinTimer(){
+  if(pinLockTimer)clearTimeout(pinLockTimer);
+  pinLockTimer=setTimeout(()=>{
+    const pin=localStorage.getItem('genbacho_pin');
+    if(pin){
+      pinBuffer='';
+      updatePinDots();
+      document.getElementById('pinLabel').textContent='PINを入力してください';
+      document.getElementById('pinLabel').style.color='#6b7280';
+      document.getElementById('pinSetupNote').style.display='none';
+      pinMode='unlock';
+      document.getElementById('pinOverlay').style.display='flex';
+    }
+  },PIN_TIMEOUT);
+}
+// タッチ・クリック・キー操作でタイマーリセット
+['touchstart','mousedown','keydown','scroll'].forEach(ev=>
+  document.addEventListener(ev,resetPinTimer,{passive:true})
+);
+// ページ非表示になったら即ロック
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    const pin=localStorage.getItem('genbacho_pin');
+    if(pin){
+      pinBuffer='';
+      updatePinDots();
+      document.getElementById('pinLabel').textContent='PINを入力してください';
+      document.getElementById('pinLabel').style.color='#6b7280';
+      document.getElementById('pinSetupNote').style.display='none';
+      pinMode='unlock';
+      document.getElementById('pinOverlay').style.display='flex';
+    }
+  }
+});
+window.addEventListener('load',()=>{ initPin(); resetPinTimer(); });
 </script>
 </body>
 </html>
