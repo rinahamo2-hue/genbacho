@@ -13,6 +13,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
 :root {
@@ -1105,7 +1106,7 @@ function exportDetailCSV(){
 }
 
 // ── PDF: INVOICE ──
-function exportInvoicePDF(){
+async function exportInvoicePDF(){
   const siteId=document.getElementById('iSite').value;
   const site=sites.find(s=>s.id==siteId);
   if(!site){alert('現場を選択してください');return;}
@@ -1114,41 +1115,79 @@ function exportInvoicePDF(){
   const myRegNo=document.getElementById('iMyRegNo').value||'未設定';
   const toName=document.getElementById('iTo').value||'（請求先）';
   const invDate=document.getElementById('iDate').value||'—';
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210,M=20;let y=20;
   const rt=Math.round(site.rev*TAX),ri=site.rev+rt;
-  doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('INVOICE',M,y);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(120);
-  doc.text('Qualified Invoice (Japan Consumption Tax Act)',M,y+6);
-  doc.text('Date: '+invDate,W-M,y,{align:'right'});
-  doc.text('Reg No: '+myRegNo,W-M,y+5,{align:'right'});
-  y+=14;doc.setDrawColor(30,30,30);doc.setLineWidth(0.5);doc.line(M,y,W-M,y);y+=8;
-  doc.setFontSize(8);doc.setTextColor(100);doc.text('BILL TO',M,y);doc.text('FROM',W/2,y);y+=4;
-  doc.setFontSize(11);doc.setTextColor(20);doc.setFont('helvetica','bold');
-  doc.text(toName+' Sama',M,y);doc.text(myName,W/2,y);
-  doc.setFont('helvetica','normal');doc.setFontSize(9);
-  if(myPerson)doc.text(myPerson,W/2,y+5);y+=14;
-  doc.setFontSize(9);doc.setTextColor(100);doc.text('SITE / WORK',M,y);y+=4;
-  doc.setFontSize(12);doc.setTextColor(20);doc.setFont('helvetica','bold');doc.text(site.name,M,y);doc.setFont('helvetica','normal');y+=10;
-  doc.setFillColor(30,30,30);doc.rect(M,y,W-M*2,8,'F');
-  doc.setFontSize(8);doc.setTextColor(255);
-  doc.text('DESCRIPTION',M+3,y+5.5);doc.text('EXCL. TAX',118,y+5.5,{align:'right'});
-  doc.text('TAX%',138,y+5.5,{align:'right'});doc.text('TAX',156,y+5.5,{align:'right'});doc.text('INCL. TAX',W-M-2,y+5.5,{align:'right'});
-  y+=8;doc.setTextColor(20);doc.setFontSize(10);doc.setFillColor(248,246,241);doc.rect(M,y,W-M*2,9,'F');
-  doc.text(site.name,M+3,y+6);doc.text(fmtN(site.rev),118,y+6,{align:'right'});doc.text('10%',138,y+6,{align:'right'});
-  doc.text(fmtN(rt),156,y+6,{align:'right'});doc.text(fmtN(ri),W-M-2,y+6,{align:'right'});y+=9;
-  doc.setDrawColor(200);doc.line(M,y,W-M,y);y+=10;
-  doc.setFontSize(9);doc.setTextColor(100);
-  doc.text('Subtotal (excl. tax):',140,y,{align:'right'});doc.setTextColor(20);doc.text('JPY '+fmtN(site.rev),W-M-2,y,{align:'right'});y+=6;
-  doc.setTextColor(100);doc.text('Consumption Tax (10%):',140,y,{align:'right'});doc.setTextColor(60,80,180);doc.text('JPY '+fmtN(rt),W-M-2,y,{align:'right'});y+=8;
-  doc.setLineWidth(0.3);doc.setDrawColor(30,30,30);doc.line(120,y,W-M,y);y+=6;
-  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(185,28,28);
-  doc.text('TOTAL (incl. tax)',140,y,{align:'right'});doc.text('JPY '+fmtN(ri),W-M-2,y,{align:'right'});doc.setFont('helvetica','normal');y+=14;
-  doc.setFontSize(9);doc.setTextColor(100);doc.text('Payment Terms:',M,y);doc.setTextColor(20);doc.text(site.payment||'—',M+30,y);y+=6;
-  doc.setTextColor(100);doc.text('Invoice Reg No:',M,y);doc.setTextColor(20);doc.text(myRegNo,M+35,y);y+=12;
-  doc.setFontSize(8);doc.setTextColor(150);doc.text('* Issued under Japan Qualified Invoice System (Tekikaku Seikyusho Hozon Hoshiki).',M,y);
-  doc.save(`請求書_${site.name}_${invDate}.pdf`);
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Noto Sans JP',sans-serif;padding:40px;color:#111;font-size:13px;background:#fff;}
+    h1{font-size:28px;font-weight:900;letter-spacing:.05em;margin-bottom:4px;}
+    .sub{color:#888;font-size:11px;margin-bottom:16px;}
+    .meta{display:flex;justify-content:space-between;margin-bottom:20px;}
+    hr{border:none;border-top:2px solid #111;margin-bottom:16px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;margin-bottom:20px;}
+    .label{color:#888;font-size:10px;margin-bottom:4px;}
+    .name{font-size:15px;font-weight:700;}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    thead{background:#111;color:#fff;}
+    th{padding:8px 10px;font-size:11px;font-weight:700;text-align:left;}
+    th:not(:first-child){text-align:right;}
+    td{padding:8px 10px;font-size:12px;border-bottom:1px solid #e5e7eb;}
+    td:not(:first-child){text-align:right;}
+    .totals{text-align:right;margin-bottom:20px;}
+    .totals div{margin-bottom:4px;font-size:12px;}
+    .total-main{font-size:18px;font-weight:900;color:#b91c1c;margin-top:8px;}
+    .footer{color:#888;font-size:10px;margin-top:24px;}
+    .terms div{margin-bottom:4px;}
+  </style></head><body>
+  <h1>適格請求書</h1>
+  <div class="sub">インボイス制度対応 Qualified Invoice</div>
+  <hr>
+  <div class="meta">
+    <div></div>
+    <div style="text-align:right;font-size:12px;">
+      <div>発行日：${invDate}</div>
+      <div>登録番号：${myRegNo}</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-bottom:24px;">
+    <div>
+      <div class="label">請求先</div>
+      <div class="name">${toName} 御中</div>
+    </div>
+    <div>
+      <div class="label">請求元</div>
+      <div class="name">${myName}</div>
+      ${myPerson?`<div style="font-size:12px;margin-top:2px;">${myPerson}</div>`:''}
+    </div>
+  </div>
+  <div style="margin-bottom:8px;font-size:11px;color:#888;">工事名</div>
+  <div style="font-size:16px;font-weight:700;margin-bottom:16px;">${site.name}</div>
+  <table>
+    <thead><tr><th>摘要</th><th>税抜金額</th><th>消費税率</th><th>消費税額</th><th>税込金額</th></tr></thead>
+    <tbody><tr>
+      <td>${site.name}</td>
+      <td>${fmtN(site.rev)}</td>
+      <td>10%</td>
+      <td>${fmtN(rt)}</td>
+      <td>${fmtN(ri)}</td>
+    </tr></tbody>
+  </table>
+  <div class="totals">
+    <div>小計（税抜）：¥${fmtN(site.rev)}</div>
+    <div style="color:#1e40af;">消費税（10%）：¥${fmtN(rt)}</div>
+    <div class="total-main">合計（税込）：¥${fmtN(ri)}</div>
+  </div>
+  <div class="terms">
+    <div>支払条件：${site.payment||'—'}</div>
+    <div>インボイス登録番号：${myRegNo}</div>
+  </div>
+  <div class="footer">※本書は適格請求書等保存方式（インボイス制度）に対応した適格請求書です。</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 // ── PDF: QUOTE ──
@@ -1158,7 +1197,7 @@ function exportQuotePDF(){
   const expiry=document.getElementById('qExpiry').value||'—';
   const siteName=document.getElementById('qSiteName').value||'（工事名）';
   const work=document.getElementById('qWork').value||'—';
-  const amt=parseFloat(document.getElementById('qAmt').value)||0;
+  const amt=getInputNum('qAmt');
   const note=document.getElementById('qNote').value||'';
   if(amt===0){alert('見積金額を入力してください');return;}
   generateQuotePDFDoc(to,date,expiry,siteName,work,amt,note);
@@ -1168,44 +1207,61 @@ function exportSingleQuotePDF(id){
   generateQuotePDFDoc(q.to||'（見積先）',q.date||'—',q.expiry||'—',q.siteName,q.work||'—',q.amt,q.note||'');
 }
 function generateQuotePDFDoc(to,date,expiry,siteName,work,amt,note){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210,M=20;let y=20;
   const tax=Math.round(amt*TAX),total=amt+tax;
-  doc.setFontSize(22);doc.setFont('helvetica','bold');doc.text('ESTIMATE',M,y);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(120);
-  doc.text('見積書',M,y+6);
-  doc.text('Date: '+date,W-M,y,{align:'right'});
-  doc.text('Valid until: '+expiry,W-M,y+5,{align:'right'});
-  y+=14;doc.setDrawColor(30,30,30);doc.setLineWidth(0.5);doc.line(M,y,W-M,y);y+=8;
-  doc.setFontSize(8);doc.setTextColor(100);doc.text('ESTIMATE FOR',M,y);y+=4;
-  doc.setFontSize(12);doc.setTextColor(20);doc.setFont('helvetica','bold');doc.text(to,M,y);
-  doc.setFont('helvetica','normal');y+=10;
-  doc.setFontSize(9);doc.setTextColor(100);doc.text('SITE / PROJECT',M,y);y+=4;
-  doc.setFontSize(12);doc.setTextColor(20);doc.setFont('helvetica','bold');doc.text(siteName,M,y);doc.setFont('helvetica','normal');y+=10;
-  doc.setFillColor(30,30,30);doc.rect(M,y,W-M*2,8,'F');
-  doc.setFontSize(8);doc.setTextColor(255);
-  doc.text('DESCRIPTION',M+3,y+5.5);doc.text('EXCL. TAX',130,y+5.5,{align:'right'});doc.text('TOTAL (INCL.)',W-M-2,y+5.5,{align:'right'});
-  y+=8;doc.setTextColor(20);doc.setFontSize(10);doc.setFillColor(248,246,241);doc.rect(M,y,W-M*2,9,'F');
-  doc.text(work,M+3,y+6);doc.text('JPY '+fmtN(amt),130,y+6,{align:'right'});doc.text('JPY '+fmtN(total),W-M-2,y+6,{align:'right'});
-  y+=9;doc.setDrawColor(200);doc.line(M,y,W-M,y);y+=10;
-  doc.setFontSize(9);doc.setTextColor(100);doc.text('Subtotal (excl. tax):',140,y,{align:'right'});doc.setTextColor(20);doc.text('JPY '+fmtN(amt),W-M-2,y,{align:'right'});y+=6;
-  doc.setTextColor(100);doc.text('Consumption Tax (10%):',140,y,{align:'right'});doc.setTextColor(60,80,180);doc.text('JPY '+fmtN(tax),W-M-2,y,{align:'right'});y+=8;
-  doc.setLineWidth(0.3);doc.setDrawColor(30,30,30);doc.line(120,y,W-M,y);y+=6;
-  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(185,28,28);
-  doc.text('TOTAL ESTIMATE',140,y,{align:'right'});doc.text('JPY '+fmtN(total),W-M-2,y,{align:'right'});
-  doc.setFont('helvetica','normal');y+=14;
-  if(note){doc.setFontSize(9);doc.setTextColor(100);doc.text('Note: ',M,y);doc.setTextColor(20);doc.text(note,M+15,y);y+=8;}
-  doc.setFontSize(8);doc.setTextColor(150);doc.text('* This estimate is valid until '+expiry+'. Prices are subject to change after expiry.',M,y);
-  doc.save(`見積書_${siteName}_${date}.pdf`);
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Noto Sans JP',sans-serif;padding:40px;color:#111;font-size:13px;background:#fff;}
+    h1{font-size:28px;font-weight:900;letter-spacing:.05em;margin-bottom:4px;}
+    .sub{color:#888;font-size:11px;margin-bottom:16px;}
+    hr{border:none;border-top:2px solid #111;margin-bottom:16px;}
+    .label{color:#888;font-size:10px;margin-bottom:4px;}
+    .name{font-size:15px;font-weight:700;margin-bottom:16px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    thead{background:#111;color:#fff;}
+    th{padding:8px 10px;font-size:11px;font-weight:700;text-align:left;}
+    th:not(:first-child){text-align:right;}
+    td{padding:8px 10px;font-size:12px;border-bottom:1px solid #e5e7eb;}
+    td:not(:first-child){text-align:right;}
+    .totals{text-align:right;margin-bottom:20px;}
+    .totals div{margin-bottom:4px;font-size:12px;}
+    .total-main{font-size:18px;font-weight:900;color:#b91c1c;margin-top:8px;}
+    .footer{color:#888;font-size:10px;margin-top:24px;}
+  </style></head><body>
+  <h1>見積書</h1>
+  <div class="sub">Date: ${date}　有効期限: ${expiry}</div>
+  <hr>
+  <div class="label">見積先</div>
+  <div class="name">${to} 御中</div>
+  <div class="label">工事名</div>
+  <div style="font-size:16px;font-weight:700;margin-bottom:16px;">${siteName}</div>
+  <table>
+    <thead><tr><th>工事内容</th><th>税抜金額</th><th>消費税（10%）</th><th>税込合計</th></tr></thead>
+    <tbody><tr>
+      <td>${work}</td>
+      <td>¥${fmtN(amt)}</td>
+      <td>¥${fmtN(tax)}</td>
+      <td>¥${fmtN(total)}</td>
+    </tr></tbody>
+  </table>
+  <div class="totals">
+    <div>小計（税抜）：¥${fmtN(amt)}</div>
+    <div style="color:#1e40af;">消費税（10%）：¥${fmtN(tax)}</div>
+    <div class="total-main">見積合計（税込）：¥${fmtN(total)}</div>
+  </div>
+  ${note?`<div style="font-size:12px;margin-bottom:8px;">備考：${note}</div>`:''}
+  <div class="footer">有効期限：${expiry}　期限を過ぎた場合は再見積もりとなる場合があります。</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 // ── PDF: SUMMARY ──
 function exportSummaryPDF(){
   if(!sites.length&&!expenses.length){alert('データがありません');return;}
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210,M=20;let y=20;
   const totalRev=sites.reduce((a,s)=>a+s.rev,0);
   const totalRevTax=Math.round(totalRev*TAX);
   const sitesExp=sites.reduce((a,s)=>a+s.sub+s.mat,0);
@@ -1215,33 +1271,41 @@ function exportSummaryPDF(){
   const totalExpTax=expenses.reduce((a,e)=>a+e.tax,0)+sitesExp*TAX;
   const payTax=Math.max(0,totalRevTax-totalExpTax);
   const today=new Date().toLocaleDateString('ja-JP');
-  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('P&L SUMMARY',M,y);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(120);
-  doc.text('Genbacho v4 — Construction Accounting',M,y+6);doc.text('Generated: '+today,W-M,y+6,{align:'right'});
-  y+=14;doc.setDrawColor(30,30,30);doc.setLineWidth(0.5);doc.line(M,y,W-M,y);y+=10;
-  const td=[
-    [[34,100,56],'売上高（税抜）',fmtN(totalRev)],
-    [[30,64,175],'　仮受消費税',fmtN(totalRevTax)],
-    [[185,28,28],'外注工賃＋材料費（現場）',fmtN(sitesExp)],
-    [[185,28,28],'その他経費',fmtN(otherExp)],
-    [[30,64,175],'　仮払消費税',fmtN(Math.round(totalExpTax))],
-    [[22,101,52],'所得（概算）',fmtN(income)],
-    [[146,64,14],'消費税 納付額（概算）',fmtN(payTax)],
-  ];
-  td.forEach(([c,label,val])=>{
-    doc.setFillColor(...c);doc.rect(M,y-4,3,7,'F');
-    doc.setFontSize(10);doc.setTextColor(30);doc.text(label,M+6,y);
-    doc.setFont('helvetica','bold');doc.text('JPY '+val,W-M-2,y,{align:'right'});
-    doc.setFont('helvetica','normal');doc.setDrawColor(220);doc.setLineWidth(0.2);doc.line(M,y+3,W-M,y+3);y+=10;
-  });
-  y+=6;doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(30);
-  doc.text('SITES ('+sites.length+')',M,y);doc.setFont('helvetica','normal');y+=4;
-  doc.setLineWidth(0.3);doc.setDrawColor(30,30,30);doc.line(M,y,W-M,y);y+=6;
-  sites.forEach(s=>{
-    doc.setFontSize(9);doc.setTextColor(30);doc.text(s.name,M,y);
-    doc.setTextColor(22,101,52);doc.text('Gross: JPY '+fmtN(s.profit)+' ('+s.margin+'%)',W-M-2,y,{align:'right'});y+=6;
-  });
-  doc.save('損益サマリー_現場帳.pdf');
+  const siteRows=sites.map(s=>`<tr><td>${s.name}</td><td style="text-align:right">¥${fmtN(s.rev)}</td><td style="text-align:right">¥${fmtN(s.profit)}</td><td style="text-align:right">${s.margin}%</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Noto Sans JP',sans-serif;padding:40px;color:#111;font-size:13px;}
+    h1{font-size:24px;font-weight:900;margin-bottom:4px;}
+    .sub{color:#888;font-size:11px;margin-bottom:16px;}
+    hr{border:none;border-top:2px solid #111;margin-bottom:20px;}
+    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:13px;}
+    .row.tot{font-weight:700;font-size:15px;}
+    .sec{font-size:11px;font-weight:700;color:#888;margin:20px 0 8px;letter-spacing:.05em;}
+    table{width:100%;border-collapse:collapse;margin-top:8px;}
+    th{background:#111;color:#fff;padding:7px 10px;font-size:11px;text-align:left;}
+    th:not(:first-child){text-align:right;}
+    td{padding:7px 10px;border-bottom:1px solid #e5e7eb;font-size:12px;}
+  </style></head><body>
+  <h1>損益サマリー</h1>
+  <div class="sub">現場帳 — 出力日：${today}</div>
+  <hr>
+  <div class="row"><span>売上高（税抜）</span><span style="color:#166534">¥${fmtN(totalRev)}</span></div>
+  <div class="row"><span>　仮受消費税</span><span style="color:#1e40af">¥${fmtN(totalRevTax)}</span></div>
+  <div class="row"><span>外注工賃・材料費（現場）</span><span style="color:#b91c1c">¥${fmtN(sitesExp)}</span></div>
+  <div class="row"><span>その他経費</span><span style="color:#b91c1c">¥${fmtN(otherExp)}</span></div>
+  <div class="row"><span>　仮払消費税</span><span style="color:#1e40af">¥${fmtN(Math.round(totalExpTax))}</span></div>
+  <div class="row tot"><span>所得（概算）</span><span>¥${fmtN(income)}</span></div>
+  <div class="row" style="margin-top:8px"><span>消費税 納付額（概算）</span><span style="color:#92400e">¥${fmtN(payTax)}</span></div>
+  <div class="sec">現場別明細（${sites.length}件）</div>
+  <table><thead><tr><th>現場名</th><th>請負金額</th><th>粗利</th><th>粗利率</th></tr></thead>
+  <tbody>${siteRows}</tbody></table>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 // ── INIT ──
