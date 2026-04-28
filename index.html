@@ -22,8 +22,8 @@
   --blue:#1e40af;--blue-l:#dbeafe;--gold:#92400e;--gold-l:#fef3c7;--steel:#6b7280;--border:#d1d5db;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;font-variant-numeric:lining-nums;}
-.fi,.fi.mono{font-variant-numeric:lining-nums;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;font-variant-numeric:lining-nums;font-feature-settings:"zero" 0;}
+.fi,.fi.mono{font-variant-numeric:lining-nums;font-feature-settings:"zero" 0;}
 
 /* HEADER */
 .hdr{background:var(--ink);padding:0 16px;position:sticky;top:0;z-index:200;}
@@ -796,7 +796,8 @@ function updateRP(){
   if(amt>0){
     prev.style.display='block';
     const tax=amt*rate;
-    document.getElementById('rpAmt').textContent=fmt(amt);
+    const isIncl=taxDisplay==='incl';
+    document.getElementById('rpAmt').textContent=fmt(isIncl?amt+tax:amt);
     document.getElementById('rpTaxLbl').textContent=rate===0?'非課税':`消費税${(rate*100).toFixed(0)}%`;
     document.getElementById('rpTax').textContent=fmt(tax);
     document.getElementById('rpTotal').textContent=fmt(amt+tax);
@@ -857,13 +858,17 @@ function updateSP(){
     prev.style.display='block';
     const rt=rev*TAX;
     const profit=rev-sub-mat;
-    document.getElementById('pRev').textContent=fmt(rev);
+    const isIncl=taxDisplay==='incl';
+    document.getElementById('pRev').textContent=fmt(isIncl?rev+rt:rev);
     document.getElementById('pRevTax').textContent=fmt(rt);
     document.getElementById('pRevInc').textContent=fmt(rev+rt);
-    document.getElementById('pSub').textContent=fmt(sub);
-    document.getElementById('pMat').textContent=fmt(mat);
+    document.getElementById('pSub').textContent=fmt(isIncl?sub+sub*TAX:sub);
+    document.getElementById('pMat').textContent=fmt(isIncl?mat+mat*TAX:mat);
     document.getElementById('pProfit').textContent=fmt(profit);
     document.getElementById('pMargin').textContent=((profit/rev)*100).toFixed(1)+'%';
+    // ラベルも切り替え
+    document.querySelector('#sitePrev .pr:nth-child(1) span:first-child').textContent=isIncl?'請負（税込）':'請負（税抜）';
+    document.querySelector('#sitePrev .pr.tot span:first-child').textContent='粗利益（税抜）';
   } else prev.style.display='none';
 }
 function addSite(){
@@ -901,7 +906,8 @@ function updateEP(){
   if(amt>0){
     prev.style.display='block';
     const tax=amt*rate;
-    document.getElementById('epAmt').textContent=fmt(amt);
+    const isIncl=taxDisplay==='incl';
+    document.getElementById('epAmt').textContent=fmt(isIncl?amt+tax:amt);
     document.getElementById('epTaxLbl').textContent=rate===0?'非課税':`消費税${(rate*100).toFixed(0)}%`;
     document.getElementById('epTax').textContent=fmt(tax);
     document.getElementById('epTotal').textContent=fmt(amt+tax);
