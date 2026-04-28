@@ -975,9 +975,12 @@ function renderSummary(){
 
 function renderSites(){
   const list=document.getElementById('sitesList');
-  const empty=document.getElementById('sitesEmpty');
-  if(sites.length===0){list.innerHTML='';list.appendChild(empty);return;}
-  empty.style.display='none';list.innerHTML='';
+  if(!list)return;
+  list.innerHTML='';
+  if(sites.length===0){
+    list.innerHTML='<div class="empty"><div class="empty-icon">🏗️</div><div class="empty-txt">現場がまだありません</div></div>';
+    return;
+  }
   sites.forEach(s=>{
     const div=document.createElement('div');div.className='sc';
     const rt=s.rev*TAX;
@@ -1014,9 +1017,12 @@ function renderSites(){
 
 function renderExpenses(){
   const list=document.getElementById('expensesList');
-  const empty=document.getElementById('expensesEmpty');
-  if(expenses.length===0){list.innerHTML='';list.appendChild(empty);return;}
-  empty.style.display='none';list.innerHTML='';
+  if(!list)return;
+  list.innerHTML='';
+  if(expenses.length===0){
+    list.innerHTML='<div class="empty"><div class="empty-icon">🧾</div><div class="empty-txt">経費がまだありません</div></div>';
+    return;
+  }
   expenses.forEach(e=>{
     const sn=e.siteId?(sites.find(s=>s.id==e.siteId)?.name||'—'):'現場外';
     const div=document.createElement('div');div.className='ec';
@@ -1042,10 +1048,13 @@ function renderExpenses(){
 
 function renderReceipts(){
   const list=document.getElementById('receiptList');
-  const empty=document.getElementById('receiptEmpty');
+  if(!list)return;
   const recs=expenses.filter(e=>e.fromReceipt);
-  if(recs.length===0){list.innerHTML='';list.appendChild(empty);return;}
-  empty.style.display='none';list.innerHTML='';
+  list.innerHTML='';
+  if(recs.length===0){
+    list.innerHTML='<div class="empty"><div class="empty-icon">🧾</div><div class="empty-txt">領収書がまだありません</div></div>';
+    return;
+  }
   recs.forEach(e=>{
     const sn=e.siteId?(sites.find(s=>s.id==e.siteId)?.name||'—'):'現場外';
     const div=document.createElement('div');div.className='ec';
@@ -1070,9 +1079,12 @@ function renderReceipts(){
 
 function renderQuotes(){
   const list=document.getElementById('quoteList');
-  const empty=document.getElementById('quoteEmpty');
-  if(quotes.length===0){list.innerHTML='';list.appendChild(empty);return;}
-  empty.style.display='none';list.innerHTML='';
+  if(!list)return;
+  list.innerHTML='';
+  if(quotes.length===0){
+    list.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">見積書がまだありません</div></div>';
+    return;
+  }
   quotes.forEach(q=>{
     const div=document.createElement('div');div.className='qc';
     div.innerHTML=`
