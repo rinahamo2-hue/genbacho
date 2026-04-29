@@ -32,7 +32,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
 .logo em{color:#f87171;font-style:normal;}
 .logo-sub{font-size:10px;color:#6b7280;font-family:'DM Mono',monospace;margin-top:1px;}
 .tax-tog{display:flex;align-items:center;gap:5px;background:var(--ink2);border-radius:20px;padding:5px 10px;font-size:11px;color:#9ca3af;cursor:pointer;user-select:none;border:1px solid #374151;}
-.tax-tog span{color:#f87171;font-weight:700;font-family:'DM Mono',monospace;}
+.tax-tog span{color:#f87171;font-weight:700;}
 .nav{display:flex;margin-top:9px;border-bottom:2px solid #1f2937;overflow-x:auto;}
 .tab{padding:8px 13px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;letter-spacing:.05em;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;flex-shrink:0;}
 .tab.active{color:#f87171;border-bottom-color:#f87171;}
@@ -249,7 +249,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
 <div class="hdr">
   <div class="hdr-top">
     <div><div class="logo">現場<em>帳</em></div><div class="logo-sub">GENBA-CHO v4 — 建設業会計</div></div>
-    <div class="tax-tog" onmousedown="event.preventDefault();toggleTax()" ontouchstart="event.preventDefault();toggleTax()">表示: <span id="taxLabel">税抜</span></div>
+    <button class="tax-tog" onclick="toggleTax()" type="button">表示: <span id="taxLabel">税抜</span></button>
   </div>
   <div class="nav">
     <div class="tab active" onclick="showPage('sites',this)">現場</div>
