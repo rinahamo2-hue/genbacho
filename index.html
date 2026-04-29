@@ -284,10 +284,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
     </div>
     <!-- 請負フィールド -->
     <div id="siteTypeUke">
-      <div class="fr"><label class="fl">請負金額（税抜）</label><input class="fi mono" id="sRev" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+      <div class="fr"><label class="fl" id="lblSRev">請負金額（税抜）</label><input class="fi mono" id="sRev" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
       <div class="g2">
-        <div class="fr"><label class="fl">外注工賃（税抜）</label><input class="fi mono" id="sSub" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
-        <div class="fr"><label class="fl">材料費（税抜）</label><input class="fi mono" id="sMat" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+        <div class="fr"><label class="fl" id="lblSSub">外注工賃（税抜）</label><input class="fi mono" id="sSub" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
+        <div class="fr"><label class="fl" id="lblSMat">材料費（税抜）</label><input class="fi mono" id="sMat" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateSP()"></div>
       </div>
     </div>
     <!-- 常用フィールド -->
@@ -366,7 +366,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
     <!-- AUTO-FILLED FIELDS -->
     <div class="fr"><label class="fl">店名・支払先</label><input class="fi" id="rShop" placeholder="例：○○資材センター" type="text"></div>
     <div class="g2">
-      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="rAmt" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateRP()"></div>
+      <div class="fr"><label class="fl" id="lblRAmt">金額（税抜）</label><input class="fi mono" id="rAmt" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateRP()"></div>
       <div class="fr"><label class="fl">税区分</label>
         <select class="fi" id="rTaxRate" onchange="updateRP()">
           <option value="0.10">課税10%（標準）</option>
@@ -427,7 +427,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
     </div>
     <div class="fr"><label class="fl">摘要</label><input class="fi" id="eDesc" placeholder="例：○○工事 ガソリン代" type="text"></div>
     <div class="g2">
-      <div class="fr"><label class="fl">金額（税抜）</label><input class="fi mono" id="eAmt" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateEP()"></div>
+      <div class="fr"><label class="fl" id="lblEAmt">金額（税抜）</label><input class="fi mono" id="eAmt" placeholder="0" type="text" inputmode="numeric" oninput="formatInput(this);updateEP()"></div>
       <div class="fr"><label class="fl">税区分</label>
         <select class="fi" id="eTaxRate" onchange="updateEP()">
           <option value="0.10">課税10%（標準）</option>
@@ -683,7 +683,21 @@ function getInputNum(id){return toNum(document.getElementById(id).value);}
 
 function toggleTax(){
   taxDisplay=taxDisplay==='excl'?'incl':'excl';
-  document.getElementById('taxLabel').textContent=taxDisplay==='excl'?'税抜':'税込';
+  const isIncl=taxDisplay==='incl';
+  const label=isIncl?'税込':'税抜';
+  document.getElementById('taxLabel').textContent=label;
+  // フォームラベルを切り替え
+  const lbls=[
+    ['lblSRev','請負金額'],
+    ['lblSSub','外注工賃'],
+    ['lblSMat','材料費'],
+    ['lblRAmt','金額'],
+    ['lblEAmt','金額'],
+  ];
+  lbls.forEach(([id,name])=>{
+    const el=document.getElementById(id);
+    if(el)el.textContent=`${name}（${label}）`;
+  });
   updateSP();
   updateEP();
   updateRP();
